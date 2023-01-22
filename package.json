@@ -1,0 +1,38 @@
+{
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "version": "1.0.0",
+  "name": "@clevercanyon/madrun",
+  "description": "Runs one or more commands configured by a mad JS file; in sequence.",
+  "repository": "https://github.com/clevercanyon/madrun",
+  "homepage": "https://github.com/clevercanyon/madrun#readme",
+  "bugs": "https://github.com/clevercanyon/madrun/issues",
+  "funding": "https://github.com/sponsors/clevercanyon",
+  "keywords": [
+    "clevercanyon"
+  ],
+  "author": {
+    "name": "Clever Canyon",
+    "url": "https://clevercanyon.com"
+  },
+  "contributors": [],
+  "type": "module",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "bin": {
+    "madrun": "index.js"
+  },
+  "dependencies": {
+    "boxen": "^7.0.1",
+    "chalk": "^5.2.0",
+    "find-up": "^6.3.0",
+    "lodash": "^4.17.21",
+    "shescape": "^1.6.4",
+    "yargs": "^17.6.2"
+  }
+}
