@@ -1,5 +1,5 @@
 export default {
-	test: (args, { se }) => {
+	test: async (args, { se }) => {
 		return 'echo ' + se.quote( args._[0] || '' );
 	}
 }
