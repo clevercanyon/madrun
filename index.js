@@ -4,7 +4,9 @@
  */
 /* eslint-env es2021, node */
 
+import fs from 'node:fs';
 import path from 'node:path';
+import { dirname } from 'desm';
 import { findUpSync } from 'find-up';
 
 import * as se from 'shescape';
@@ -17,6 +19,11 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { execSync } from 'node:child_process';
 
+const __dirname = dirname(import.meta.url);
+
+const pkgFile = path.resolve(__dirname, './package.json');
+const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
+
 const { error: err } = console; // Shorter reference.
 
 const isParentTTY = process.stdout.isTTY ? true : false;
@@ -25,10 +32,10 @@ const isTTY = process.stdout.isTTY || process.env.PARENT_IS_TTY ? true : false;
 const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
 const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
 
-const omitFromCMDArgs = ['$0', '_']; // Named arguments we omit from CMD args.
 const regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu');
 const regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
 const regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
+const omitFromCMDArgs = ['$0', '_', 'madrunHelp', 'madrun-help', 'madrunVersion', 'madrun-version', 'madrunDebug', 'madrun-debug'];
 
 /**
  * Run command.
@@ -54,14 +61,32 @@ class Run {
 			throw new Error('`' + configFilesGlob + '` not found!');
 		}
 		this.cwd = path.dirname(this.configFile);
+
+		if (this.args.madrunDebug) {
+			err(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
+			err(chalk.black('> args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
+			err(chalk.black('> ---'));
+
+			err(chalk.black('> cmdName:') + ' ' + chalk.gray(this.cmdName));
+			err(chalk.black('> cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
+			err(chalk.black('> ---'));
+		}
 	}
 
 	/**
 	 * Runs CMD.
 	 */
 	async run() {
-		for (let cmd of await this.cmds()) {
-			execSync(await this.populateReplacementCodes(cmd), {
+		for (const rawCMD of await this.cmds()) {
+			// Populates replacement codes in given CMD.
+			const cmd = await this.populateReplacementCodes(rawCMD);
+
+			if (this.args.madrunDebug) {
+				err(chalk.black('> rawCMD:') + ' ' + chalk.gray(rawCMD));
+				err(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
+				err(chalk.black('> ---'));
+			}
+			execSync(cmd, {
 				cwd: this.cwd,
 				stdio: [0, 1, 2],
 				env: { ...process.env, PARENT_IS_TTY: isTTY },
@@ -232,7 +257,17 @@ class u {
 			command: ['$0'],
 			desc: 'Runs one or more commands configured by a mad JS file; in sequence.',
 			builder: (yargs) => {
-				yargs.check(async (/* args */) => {
+				yargs
+				.options({
+					madrunDebug: {
+						type: 'boolean',
+						requiresArg: false,
+						demandOption: false,
+						default: false,
+						description: 'Debug?',
+					},
+				})
+				.check(async (/* args */) => {
 					return true;
 				});
 			},
@@ -245,7 +280,7 @@ class u {
 			err(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
-		.help(false)
-		.version(false)
+		.help('madrunHelp')
+		.version('madrunVersion', pkg.version)
 		.parse();
 })();
