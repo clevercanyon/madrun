@@ -241,5 +241,7 @@ class u {
 			err(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
+		.help(false)
+		.version(false)
 		.parse();
 })();
