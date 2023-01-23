@@ -26,8 +26,9 @@ const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
 const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
 
 const omitFromCMDArgs = ['$0', '_']; // Named arguments we omit from CMD args.
-const regexpCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
-const regexpCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
+const regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu');
+const regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
+const regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
 
 /**
  * Run command.
@@ -134,7 +135,7 @@ class Run {
 			cmd = cmd.replace(new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escREName + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu'), argParts);
 			cmd = cmd.replace(new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escREName + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu'), argValue);
 		}
-		cmd = cmd.replaceAll('${@}', (/* All arguments. */) => {
+		cmd = cmd.replace(regexAllCMDArgPartsValues, (/* All arguments. Both formats supported for consistency. */) => {
 			const args = []; // Initialize list of arguments.
 
 			for (const v of this.cmdArgs._) {
@@ -149,8 +150,11 @@ class Run {
 			}
 			return se.quoteAll(args).join(' ');
 		});
-		// Empty any others remaining that were not filled above.
-		return cmd.replace(regexpCMDArgParts, '').replace(regexpCMDArgValues, '');
+		// Empty any others remaining; i.e., that were not already filled above.
+		cmd = cmd.replace(regexpRemainingCMDArgParts, '').replace(regexpRemainingCMDArgValues, '');
+
+		// Finally, compress any superfluous whitespace left behind by replacements.
+		return cmd.replace(/[\t ]{2,}/gu, ' ').trim();
 	}
 
 	/*
