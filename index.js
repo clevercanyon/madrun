@@ -5,7 +5,7 @@
 /* eslint-env es2021, node */
 
 import path from 'node:path';
-import { findUp } from 'find-up';
+import { findUpSync } from 'find-up';
 
 import * as se from 'shescape';
 import _ꓺomit from 'lodash/omit.js';
@@ -47,6 +47,12 @@ class Run {
 		if ('' === this.cmdName) {
 			throw new Error('Missing command name.');
 		}
+		this.configFile = findUpSync(configFiles);
+
+		if (!this.configFile) {
+			throw new Error('`' + configFilesGlob + '` not found!');
+		}
+		this.cwd = path.dirname(this.configFile);
 	}
 
 	/**
@@ -55,30 +61,18 @@ class Run {
 	async run() {
 		for (let cmd of await this.cmds()) {
 			execSync(await this.populateReplacementCodes(cmd), {
+				cwd: this.cwd,
 				stdio: [0, 1, 2],
-				cwd: process.cwd(),
 				env: { ...process.env, PARENT_IS_TTY: isTTY },
 			});
 		}
 	}
 
 	/**
-	 * Finds config file.
-	 */
-	async configFile() {
-		const configFile = await findUp(configFiles);
-
-		if (!configFile) {
-			throw new Error('`' + configFilesGlob + '` not found!');
-		}
-		return configFile;
-	}
-
-	/**
 	 * Parses config file.
 	 */
 	async config() {
-		const configFile = await this.configFile();
+		const configFile = this.configFile;
 		const config = (await import(configFile)).default;
 
 		if (typeof config !== 'object') {
@@ -105,7 +99,7 @@ class Run {
 	 */
 	async cmds() {
 		const cmdFn = await this.cmdFn();
-		let cmds = await cmdFn(this.cmdArgs, { se });
+		let cmds = await cmdFn(this.cmdArgs, { cwd: this.cwd, se });
 		cmds = typeof cmds === 'string' && '' !== cmds ? [cmds] : cmds;
 
 		if (!(cmds instanceof Array)) {
