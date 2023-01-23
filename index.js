@@ -89,6 +89,7 @@ class Run {
 			execSync(cmd, {
 				cwd: this.cwd,
 				stdio: [0, 1, 2],
+				shell: '/usr/bin/env bash',
 				env: { ...process.env, PARENT_IS_TTY: isTTY },
 			});
 		}
