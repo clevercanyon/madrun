@@ -4,7 +4,7 @@
     "access": "public"
   },
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "@clevercanyon/madrun",
   "description": "Runs one or more commands configured by a mad JS file; in sequence.",
   "repository": "https://github.com/clevercanyon/madrun",
