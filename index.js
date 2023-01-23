@@ -180,7 +180,7 @@ class Run {
 		cmd = cmd.replace(regexpRemainingCMDArgParts, '').replace(regexpRemainingCMDArgValues, '');
 
 		// Finally, compress any superfluous whitespace left behind by replacements.
-		return cmd.replace(/[\t ]{2,}/gu, ' ').trim();
+		return cmd.replace(/[\t ]+/gu, ' ').trim();
 	}
 
 	/*
