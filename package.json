@@ -32,7 +32,7 @@
     "chalk": "^5.2.0",
     "find-up": "^6.3.0",
     "lodash": "^4.17.21",
-    "shescape": "^1.6.4",
+    "shescape": "npm:@clevercanyon/shescape.fork@^1.6.4",
     "yargs": "^17.6.2"
   }
 }
