@@ -6,7 +6,7 @@
   "license": "MIT",
   "version": "1.0.10",
   "name": "@clevercanyon/madrun",
-  "description": "Runs one or more commands configured by a mad JS file; in sequence.",
+  "description": "Runs commands configured by a JS file; in sequence.",
   "repository": "https://github.com/clevercanyon/madrun",
   "homepage": "https://github.com/clevercanyon/madrun#readme",
   "bugs": "https://github.com/clevercanyon/madrun/issues",
@@ -18,15 +18,18 @@
     "name": "Clever Canyon",
     "url": "https://clevercanyon.com"
   },
-  "contributors": [],
   "type": "module",
   "files": [
-    "index.js"
+    "/cli.js",
+    "/index.js"
   ],
-  "main": "index.js",
   "bin": {
-    "madrun": "index.js"
+    "madrun": "./cli.js"
   },
+  "exports": "./index.js",
+  "module": "./index.js",
+  "main": "./index.js",
+  "unpkg": "./index.js",
   "dependencies": {
     "boxen": "^7.0.1",
     "chalk": "^5.2.0",
