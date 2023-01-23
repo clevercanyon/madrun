@@ -35,7 +35,7 @@ const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
 const regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu');
 const regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
 const regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
-const omitFromCMDArgs = ['$0', '_', 'madrunHelp', 'madrun-help', 'madrunVersion', 'madrun-version', 'madrunDebug', 'madrun-debug'];
+const omitFromNamedCMDArgs = ['$0', '_', 'madrunHelp', 'madrun-help', 'madrunVersion', 'madrun-version', 'madrunDebug', 'madrun-debug'];
 
 /**
  * Run command.
@@ -50,7 +50,7 @@ class Run {
 		this.cmdName = args._?.[0] || '';
 		this.cmdArgs = {
 			_: args._.slice(1),
-			..._ꓺomit(args, omitFromCMDArgs),
+			..._ꓺomit(args, omitFromNamedCMDArgs),
 		};
 		if ('' === this.cmdName) {
 			throw new Error('Missing command name.');
@@ -150,7 +150,7 @@ class Run {
 
 			cmd = cmd.replace(regExpArgParts, argValue).replace(regExpArgValue, argValue);
 		});
-		for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromCMDArgs))) {
+		for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromNamedCMDArgs))) {
 			const prefix = '-'.repeat(1 === n.length ? 1 : 2);
 			const escREName = this.escRegExp(prefix + n);
 
@@ -166,7 +166,7 @@ class Run {
 			for (const v of this.cmdArgs._) {
 				args.push(String(v)); // Positional argument.
 			}
-			for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromCMDArgs))) {
+			for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromNamedCMDArgs))) {
 				const prefix = '-'.repeat(1 === n.length ? 1 : 2);
 				const name = prefix + n;
 
