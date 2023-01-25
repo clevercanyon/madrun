@@ -351,7 +351,7 @@ class u {
 		})
 		.fail(async (message, error /* , yargs */) => {
 			if (error?.stack && typeof error.stack === 'string') err(chalk.gray(error.stack));
-			err(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
+			err(await u.error('Madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
 		.help('madrunHelp')
