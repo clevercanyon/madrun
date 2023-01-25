@@ -160,7 +160,11 @@ class Run {
 						? true
 						: false,
 			},
-			...opts,
+			// Output handlers do not run when `stdio: 'inherit'` or `quiet: true`.
+			stdout: opts.quiet ? null : (buffer) => echo(chalk.white(buffer.toString())),
+			stderr: opts.quiet ? null : (buffer) => echo(chalk.gray(buffer.toString())),
+
+			..._ꓺomit(opts, ['quiet']),
 		});
 	}
 
