@@ -26,6 +26,7 @@ const pkgFile = path.resolve(__dirname, './package.json');
 const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
 
 const { error: err } = console; // Shorter reference.
+const echo = process.stdout.write.bind(process.stdout);
 
 const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
 const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
@@ -76,17 +77,20 @@ class Run {
 	 */
 	async run() {
 		await this.maybeInstallNodeModules();
+		const cmdConfigData = await this.cmdConfigData();
 
-		for (const rawCMD of await this.cmds()) {
-			// Populates replacement codes in given CMD.
-			const cmd = await this.populateReplacementCodes(rawCMD);
+		for (const cmdData of cmdConfigData.cmds) {
+			// Populates env vars & replacement codes in given CMD.
+			const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
 			if (this.args.madrunDebug) {
-				err(chalk.black('> rawCMD:') + ' ' + chalk.gray(rawCMD));
+				err(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+				err(chalk.black('> rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
+				err(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
 				err(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
 				err(chalk.black('> ---'));
 			}
-			await this.exec(cmd); // @todo Allow scripts to set options.
+			await this.exec(cmd, cmdData.opts);
 		}
 	}
 
@@ -187,36 +191,95 @@ class Run {
 	}
 
 	/**
-	 * Gets CMD function from config file.
+	 * Gets config function for current `cmdName`.
 	 */
-	async cmdFn() {
+	async cmdConfigFn() {
 		const config = await this.config();
-		const cmdFn = config[this.cmdName] || null;
+		const configFn = config[this.cmdName] || null;
 
-		if (typeof cmdFn !== 'function') {
+		if (typeof configFn !== 'function') {
 			throw new Error('`' + this.cmdName + '` command is not available.');
 		}
-		return cmdFn;
+		return configFn;
 	}
 
 	/**
-	 * Gets CMDs from config file CMD function.
+	 * Gets config data for current `cmdName`.
 	 */
-	async cmds() {
-		const cmdFn = await this.cmdFn();
-		let cmds = await cmdFn(this.cmdArgs, { cwd: this.cwd, se });
-		cmds = typeof cmds === 'string' && '' !== cmds ? [cmds] : cmds;
+	async cmdConfigData() {
+		const ctxUtils = {
+			cwd: this.cwd, // CWD.
+			se, // Shell escape|quote.
+			chalk, // Chalk string colorizer.
+		};
+		const configFn = await this.cmdConfigFn();
+		let configData = await configFn(this.cmdArgs, ctxUtils);
 
-		if (!(cmds instanceof Array)) {
-			throw new Error('`' + this.cmdName + '` command has invalid data.');
+		configData = configData instanceof Array ? { cmds: configData } : configData;
+		configData = typeof configData === 'string' ? { cmds: '' !== configData ? [configData] : [] } : configData;
+
+		if (typeof configData !== 'object') {
+			throw new Error('`' + this.cmdName + '` command has an invalid data type.');
 		}
-		return cmds;
+		configData = Object.assign({ env: {}, cmds: [], opts: {} }, configData);
+
+		if (typeof configData.env !== 'object') {
+			throw new Error('`' + this.cmdName + '` command contains invalid `env` data.');
+		}
+		if (!(configData.cmds instanceof Array) || !configData.cmds.length) {
+			throw new Error('`' + this.cmdName + '` command contains invalid `cmds` data.');
+		}
+		if (typeof configData.opts !== 'object') {
+			throw new Error('`' + this.cmdName + '` command contains invalid `opts` data.');
+		}
+		for (let i = 0; i < configData.cmds.length; i++) {
+			let cmdData = configData.cmds[i];
+			cmdData = typeof cmdData === 'string' ? { cmd: cmdData } : cmdData;
+
+			if (typeof cmdData !== 'object') {
+				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid data.');
+			}
+			cmdData = Object.assign({ cmd: '' }, { env: configData.env, opts: configData.opts }, cmdData);
+			configData.cmds[i] = cmdData; // Update config data object now with merged data.
+
+			if (typeof cmdData.env !== 'object') {
+				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `env` data.');
+			}
+			if (typeof cmdData.cmd !== 'string' || !cmdData.cmd) {
+				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `cmd` data.');
+			}
+			if (typeof cmdData.opts !== 'object') {
+				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `opts` data.');
+			}
+		}
+		return configData;
 	}
 
 	/**
-	 * Populates CMD replacement codes.
+	 * Populates a given CMD.
 	 */
-	async populateReplacementCodes(cmd) {
+	async populateCMD(env, cmd) {
+		env = await this.populateCMDEnvVars(env);
+		cmd = await this.populateCMDReplacementCodes(cmd);
+		return env ? env + ' ' + cmd : cmd;
+	}
+
+	/**
+	 * Populates environment vars for a given CMD.
+	 */
+	async populateCMDEnvVars(env) {
+		let vars = ''; // Initialize.
+
+		for (const [name, value] of Object.entries(env)) {
+			vars += ' ' + name + '=' + se.quote(value);
+		}
+		return vars.trim();
+	}
+
+	/**
+	 * Populates replacement codes in a given CMD.
+	 */
+	async populateCMDReplacementCodes(cmd) {
 		this.cmdArgs._.forEach((v, i) => {
 			const pos = String(i + 1);
 			const escREPos = this.escRegExp(pos);
