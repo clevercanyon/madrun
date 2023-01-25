@@ -271,7 +271,7 @@ class Run {
 		let vars = ''; // Initialize.
 
 		for (const [name, value] of Object.entries(env)) {
-			vars += ' ' + name + '=' + se.quote(value);
+			vars += ' export ' + name + '=' + se.quote(value) + ';';
 		}
 		return vars.trim();
 	}
