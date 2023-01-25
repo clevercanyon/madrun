@@ -26,8 +26,6 @@ const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
 
 const { error: err } = console; // Shorter reference.
 
-const isTTY = process.stdout.isTTY || process.env.PARENT_IS_TTY ? true : false;
-
 const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
 const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
 
@@ -76,6 +74,8 @@ class Run {
 	 * Runs CMD.
 	 */
 	async run() {
+		await this.maybeInstallNodeModules();
+
 		for (const rawCMD of await this.cmds()) {
 			// Populates replacement codes in given CMD.
 			const cmd = await this.populateReplacementCodes(rawCMD);
@@ -85,17 +85,53 @@ class Run {
 				err(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
 				err(chalk.black('> ---'));
 			}
-			execSync(cmd, {
-				cwd: this.cwd,
-				stdio: [0, 1, 2],
-				shell: 'bash', // In `${PATH}`.
-				env: {
-					...process.env,
-					PARENT_IS_TTY: process.stdout.isTTY
-						|| process.env.PARENT_IS_TTY ? true : false,
-				},
-			});
+			await this.exec(cmd); // @todo Allow scripts to set options.
 		}
+	}
+
+	/**
+	 * Installs node modules; maybe.
+	 */
+	async maybeInstallNodeModules() {
+		const pkgFile = path.resolve(this.cwd, './package.json');
+		const nodeModulesDir = path.resolve(this.cwd, './node_modules');
+
+		if (!fs.existsSync(pkgFile) || fs.existsSync(nodeModulesDir)) {
+			return; // Nothing to do in these cases.
+		}
+		const pkgLockFile = path.resolve(this.cwd, './package-lock.json');
+		const npmShrinkwrapFile = path.resolve(this.cwd, './npm-shrinkwrap.json');
+
+		if (this.args.madrunDebug) {
+			err(chalk.black('> Auto-installing node modules.'));
+			err(chalk.black('> ---'));
+		}
+		await this.exec(fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile) ? 'npm ci' : 'npm install');
+	}
+
+	/**
+	 * Executes command line operation(s).
+	 *
+	 * @param   {string}          cmd  CMD + any args.
+	 * @param   {object}          opts Any additional options.
+	 *
+	 * @returns {Promise<string>}      Command output.
+	 */
+	async exec(cmd, opts = {}) {
+		return execSync(cmd, {
+			cwd: this.cwd,
+			stdio: [0, 1, 2],
+			shell: 'bash',
+			env: {
+				...process.env,
+				PARENT_IS_TTY:
+					process.stdout.isTTY || //
+					process.env.PARENT_IS_TTY
+						? true
+						: false,
+			},
+			...opts,
+		});
 	}
 
 	/**
@@ -262,18 +298,18 @@ class u {
 			desc: 'Runs one or more commands configured by a mad JS file; in sequence.',
 			builder: (yargs) => {
 				yargs
-				.options({
-					madrunDebug: {
-						type: 'boolean',
-						requiresArg: false,
-						demandOption: false,
-						default: false,
-						description: 'Debug?',
-					},
-				})
-				.check(async (/* args */) => {
-					return true;
-				});
+					.options({
+						madrunDebug: {
+							type: 'boolean',
+							requiresArg: false,
+							demandOption: false,
+							default: false,
+							description: 'Debug?',
+						},
+					})
+					.check(async (/* args */) => {
+						return true;
+					});
 			},
 			handler: async (args) => {
 				await new Run(args).run();
