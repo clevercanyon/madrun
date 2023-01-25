@@ -148,6 +148,11 @@ class Run {
 	 * @returns {Promise<string>}      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
 	 */
 	async spawn(cmd, args = [], opts = {}) {
+		if ('shell' in opts ? opts.shell : 'bash') {
+			// When using a shell, we must escape everything ourselves.
+			// i.e., Node does not escape `cmd` or `args` when a `shell` is given.
+			(cmd = se.quote(cmd)), (args = se.quoteAll(args));
+		}
 		return await spawn(cmd, args, {
 			cwd: this.cwd,
 			shell: 'bash',
