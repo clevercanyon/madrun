@@ -26,7 +26,6 @@ const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
 
 const { error: err } = console; // Shorter reference.
 
-const isParentTTY = process.stdout.isTTY ? true : false;
 const isTTY = process.stdout.isTTY || process.env.PARENT_IS_TTY ? true : false;
 
 const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
@@ -90,7 +89,11 @@ class Run {
 				cwd: this.cwd,
 				stdio: [0, 1, 2],
 				shell: 'bash', // In `${PATH}`.
-				env: { ...process.env, PARENT_IS_TTY: isTTY },
+				env: {
+					...process.env,
+					PARENT_IS_TTY: process.stdout.isTTY
+						|| process.env.PARENT_IS_TTY ? true : false,
+				},
 			});
 		}
 	}
@@ -200,7 +203,7 @@ class u {
 	 * Error utilities.
 	 */
 	static async error(title, text) {
-		if (!isParentTTY || !supportsColor?.has16m) {
+		if (!process.stdout.isTTY || !supportsColor?.has16m) {
 			return chalk.red(text); // No box.
 		}
 		return (
@@ -225,7 +228,7 @@ class u {
 	 * Finale utilities.
 	 */
 	static async finale(title, text) {
-		if (!isParentTTY || !supportsColor?.has16m) {
+		if (!process.stdout.isTTY || !supportsColor?.has16m) {
 			return chalk.green(text); // No box.
 		}
 		return (
