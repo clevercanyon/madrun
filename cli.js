@@ -4,23 +4,24 @@
  */
 /* eslint-env es2021, node */
 
+import _ꓺomit from 'lodash/omit.js';
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { dirname } from 'desm';
 import { findUpSync } from 'find-up';
 
 import * as se from 'shescape';
-import _ꓺomit from 'lodash/omit.js';
+import spawn from 'spawn-please';
+import { execSync } from 'node:child_process';
 
 import coloredBox from 'boxen';
 import chalk, { supportsColor } from 'chalk';
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { execSync } from 'node:child_process';
 
 const __dirname = dirname(import.meta.url);
-
 const pkgFile = path.resolve(__dirname, './package.json');
 const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
 
@@ -106,22 +107,51 @@ class Run {
 			err(chalk.black('> Auto-installing node modules.'));
 			err(chalk.black('> ---'));
 		}
-		await this.exec(fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile) ? 'npm ci' : 'npm install');
+		await this.spawn('npm', fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile) ? ['ci'] : ['install']);
 	}
 
 	/**
-	 * Executes command line operation(s).
+	 * Executes command line operation.
 	 *
 	 * @param   {string}          cmd  CMD + any args.
 	 * @param   {object}          opts Any additional options.
 	 *
-	 * @returns {Promise<string>}      Command output.
+	 * @returns {Promise<string>}      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
 	 */
 	async exec(cmd, opts = {}) {
-		return execSync(cmd, {
+		return (
+			execSync(cmd, {
+				cwd: this.cwd,
+				shell: 'bash',
+				stdio: 'inherit',
+				encoding: 'utf-8',
+				env: {
+					...process.env,
+					PARENT_IS_TTY:
+						process.stdout.isTTY || //
+						process.env.PARENT_IS_TTY
+							? true
+							: false,
+				},
+				...opts,
+			}) || ''
+		);
+	}
+
+	/**
+	 * Spawns command line operation.
+	 *
+	 * @param   {string}          cmd  CMD.
+	 * @param   {string[]}        args Arguments.
+	 * @param   {object}          opts Any additional options.
+	 *
+	 * @returns {Promise<string>}      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
+	 */
+	async spawn(cmd, args = [], opts = {}) {
+		return await spawn(cmd, args, {
 			cwd: this.cwd,
-			stdio: [0, 1, 2],
 			shell: 'bash',
+			stdio: 'inherit',
 			env: {
 				...process.env,
 				PARENT_IS_TTY:
