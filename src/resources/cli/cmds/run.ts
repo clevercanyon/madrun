@@ -1,34 +1,26 @@
 #!/usr/bin/env node
 /**
- * `madrun` CLI.
+ * CLI.
  */
-/* eslint-env es2021, node */
-
-import _ꓺomit from 'lodash/omit.js';
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { dirname } from 'desm';
 import { findUpSync } from 'find-up';
 
+import chalk from 'chalk';
 import * as se from 'shescape';
+
+import _ꓺomit from 'lodash/omit.js';
+
 import spawn from 'spawn-please';
 import { execSync } from 'node:child_process';
 
-import coloredBox from 'boxen';
-import chalk, { supportsColor } from 'chalk';
-
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
-const __dirname = dirname(import.meta.url);
-const pkgFile = path.resolve(__dirname, './package.json');
-const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
+import type { Arguments as YargsꓺArgs } from 'yargs';
 
 const { error: err } = console; // Shorter reference.
 const echo = process.stdout.write.bind(process.stdout);
 
-const configFilesGlob = ['.madrun.{js|cjs|mjs}'];
+const configFilesGlob = '.madrun.{js|cjs|mjs}';
 const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
 
 const regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu');
@@ -37,16 +29,94 @@ const regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-
 const omitFromNamedCMDArgs = ['$0', '_', 'madrunHelp', 'madrun-help', 'madrunVersion', 'madrun-version', 'madrunDebug', 'madrun-debug'];
 
 /**
+ * Interfaces.
+ */
+export type Args = YargsꓺArgs<{
+	madrunDebug: boolean;
+	madrunHelp: boolean;
+	madrunVersion: boolean;
+}>;
+export interface Env {
+	[x: string]: unknown;
+}
+export interface Opts {
+	[x: string]: unknown;
+}
+export interface Config {
+	[x: string]: string | string[] | CMDConfigFn;
+}
+export type CMDConfigFn = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCTXUtils) => Promise<CMDConfigFnRtns>;
+export type CMDConfigFnSync = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCTXUtils) => CMDConfigFnRtns;
+export type CMDConfigFnCMDArgs = Omit<YargsꓺArgs<Args>, '$0'>;
+export interface CMDConfigFnCTXUtils {
+	cwd: string;
+	se: typeof se;
+	chalk: typeof chalk;
+}
+export type CMDConfigFnRtns =
+	| string
+	| string[]
+	| {
+			env?: Env;
+			cmds: CMDConfigFnRtnObjCMDs;
+			opts?: Opts;
+	  };
+export type CMDConfigFnRtnObjCMDs =
+	| string
+	| Array<
+			| string
+			| {
+					env?: Env;
+					cmd: string;
+					opts?: Opts;
+			  }
+	  >;
+export interface CMDConfigData {
+	env: Env;
+	cmds: Array<{
+		env: Env;
+		cmd: string;
+		opts: Opts;
+	}>;
+	opts: Opts;
+}
+
+/**
  * Run command.
  */
-class Run {
+export default class Run {
+	/**
+	 * Yargs args.
+	 */
+	protected args: YargsꓺArgs;
+
+	/**
+	 * Called CMD name.
+	 */
+	protected cmdName: string;
+
+	/**
+	 * Called CMD args; passed to config function.
+	 */
+	protected cmdArgs: CMDConfigFnCMDArgs;
+
+	/**
+	 * Config file location.
+	 */
+	protected configFile: string;
+
+	/**
+	 * Config file directory as CWD.
+	 */
+	protected cwd: string;
+
 	/**
 	 * Constructor.
 	 */
-	constructor(args) {
+	public constructor(args: YargsꓺArgs) {
 		this.args = args;
 
-		this.cmdName = args._?.[0] || '';
+		this.cmdName = String(args._?.[0] || '');
 		this.cmdArgs = {
 			_: args._.slice(1),
 			..._ꓺomit(args, omitFromNamedCMDArgs),
@@ -54,7 +124,7 @@ class Run {
 		if ('' === this.cmdName) {
 			throw new Error('Missing command name.');
 		}
-		this.configFile = findUpSync(configFiles);
+		this.configFile = findUpSync(configFiles) as string;
 
 		if (!this.configFile) {
 			throw new Error('`' + configFilesGlob + '` not found!');
@@ -75,7 +145,7 @@ class Run {
 	/**
 	 * Runs CMD.
 	 */
-	async run() {
+	public async run(): Promise<void> {
 		await this.maybeInstallNodeModules();
 		const cmdConfigData = await this.cmdConfigData();
 
@@ -97,7 +167,7 @@ class Run {
 	/**
 	 * Installs node modules; maybe.
 	 */
-	async maybeInstallNodeModules() {
+	protected async maybeInstallNodeModules(): Promise<void> {
 		const pkgFile = path.resolve(this.cwd, './package.json');
 		const nodeModulesDir = path.resolve(this.cwd, './node_modules');
 
@@ -117,41 +187,40 @@ class Run {
 	/**
 	 * Executes command line operation.
 	 *
-	 * @param   {string}          cmd  CMD + any args.
-	 * @param   {object}          opts Any additional options.
+	 * @param   cmd  CMD + any args, or shell script to run.
+	 * @param   opts Any additional execSync options.
 	 *
-	 * @returns {Promise<string>}      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
+	 * @returns      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
 	 */
-	async exec(cmd, opts = {}) {
+	protected async exec(cmd: string, opts: { [x: string]: unknown } = {}): Promise<string> {
 		return (
 			execSync(cmd, {
 				cwd: this.cwd,
 				shell: 'bash',
 				stdio: 'inherit',
-				encoding: 'utf-8',
 				env: {
 					...process.env,
 					PARENT_IS_TTY:
 						process.stdout.isTTY || //
 						process.env.PARENT_IS_TTY
-							? true
-							: false,
+							? 'true'
+							: 'false',
 				},
 				...opts,
-			}) || ''
-		);
+			}) || Buffer.from('')
+		).toString();
 	}
 
 	/**
 	 * Spawns command line operation.
 	 *
-	 * @param   {string}          cmd  CMD.
-	 * @param   {string[]}        args Arguments.
-	 * @param   {object}          opts Any additional options.
+	 * @param   cmd  CMD name or path.
+	 * @param   args Any CMD arguments.
+	 * @param   opts Any additional spawn options.
 	 *
-	 * @returns {Promise<string>}      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
+	 * @returns      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
 	 */
-	async spawn(cmd, args = [], opts = {}) {
+	protected async spawn(cmd: string, args: string[] = [], opts: { [x: string]: unknown } = {}): Promise<string> {
 		if ('shell' in opts ? opts.shell : 'bash') {
 			// When using a shell, we must escape everything ourselves.
 			// i.e., Node does not escape `cmd` or `args` when a `shell` is given.
@@ -166,12 +235,12 @@ class Run {
 				PARENT_IS_TTY:
 					process.stdout.isTTY || //
 					process.env.PARENT_IS_TTY
-						? true
-						: false,
+						? 'true'
+						: 'false',
 			},
 			// Output handlers do not run when `stdio: 'inherit'` or `quiet: true`.
-			stdout: opts.quiet ? null : (buffer) => echo(chalk.white(buffer.toString())),
-			stderr: opts.quiet ? null : (buffer) => echo(chalk.gray(buffer.toString())),
+			stdout: opts.quiet ? null : (buffer: Buffer) => echo(chalk.white(buffer.toString())),
+			stderr: opts.quiet ? null : (buffer: Buffer) => echo(chalk.gray(buffer.toString())),
 
 			..._ꓺomit(opts, ['quiet']),
 		});
@@ -179,10 +248,15 @@ class Run {
 
 	/**
 	 * Parses config file.
+	 *
+	 * @returns Configuration.
 	 */
-	async config() {
+	protected async config(): Promise<Config> {
 		const configFile = this.configFile;
-		const config = (await import(configFile)).default;
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		const config = (await import(configFile)).default as Config;
 
 		if (typeof config !== 'object') {
 			throw new Error('`' + path.basename(configFile) + '` config failure.');
@@ -192,95 +266,128 @@ class Run {
 
 	/**
 	 * Gets config function for current `cmdName`.
+	 *
+	 * @returns CMD config function.
 	 */
-	async cmdConfigFn() {
+	protected async cmdConfigFn(): Promise<CMDConfigFn> {
 		const config = await this.config();
-		const configFn = config[this.cmdName] || null;
+		let configFn = config[this.cmdName] || null;
 
+		if (typeof configFn === 'string') {
+			configFn = async (): Promise<string> => configFn as unknown as string;
+		}
+		if (configFn instanceof Array) {
+			configFn = async (): Promise<CMDConfigFnRtns> =>
+				(configFn as unknown as Array<unknown>).map((cmd) => {
+					if (typeof cmd !== 'string') {
+						throw new Error('`' + this.cmdName + '` command is not available.');
+					}
+					return cmd; // Strings are nice.
+				});
+		}
 		if (typeof configFn !== 'function') {
 			throw new Error('`' + this.cmdName + '` command is not available.');
+		}
+		if (configFn.constructor.name !== 'AsyncFunction') {
+			configFn = async (...args): Promise<CMDConfigFnRtns> => (configFn as unknown as CMDConfigFnSync)(...args);
 		}
 		return configFn;
 	}
 
 	/**
 	 * Gets config data for current `cmdName`.
+	 *
+	 * @returns CMD configuration data.
 	 */
-	async cmdConfigData() {
+	protected async cmdConfigData(): Promise<CMDConfigData> {
 		const ctxUtils = {
 			cwd: this.cwd, // CWD.
 			se, // Shell escape|quote.
 			chalk, // Chalk string colorizer.
 		};
 		const configFn = await this.cmdConfigFn();
-		let configData = await configFn(this.cmdArgs, ctxUtils);
+		let configFnRtn = await configFn(this.cmdArgs, ctxUtils);
 
-		configData = configData instanceof Array ? { cmds: configData } : configData;
-		configData = typeof configData === 'string' ? { cmds: '' !== configData ? [configData] : [] } : configData;
+		configFnRtn = typeof configFnRtn === 'string' ? { cmds: '' === configFnRtn ? [] : [configFnRtn] } : configFnRtn;
+		configFnRtn = configFnRtn instanceof Array ? { cmds: configFnRtn } : configFnRtn; // Converts array in previous line.
 
-		if (typeof configData !== 'object') {
-			throw new Error('`' + this.cmdName + '` command has an invalid data type.');
+		if (typeof configFnRtn !== 'object') {
+			throw new Error('`' + this.cmdName + '` command config has an invalid data type.');
 		}
-		configData = Object.assign({ env: {}, cmds: [], opts: {} }, configData);
+		configFnRtn = Object.assign({ env: {}, cmds: [], opts: {} }, configFnRtn);
+		configFnRtn.cmds = typeof configFnRtn.cmds === 'string' ? ('' === configFnRtn.cmds ? [] : [configFnRtn.cmds]) : configFnRtn.cmds;
 
-		if (typeof configData.env !== 'object') {
-			throw new Error('`' + this.cmdName + '` command contains invalid `env` data.');
+		if (typeof configFnRtn.env !== 'object') {
+			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `env` property.');
 		}
-		if (!(configData.cmds instanceof Array) || !configData.cmds.length) {
-			throw new Error('`' + this.cmdName + '` command contains invalid `cmds` data.');
+		if (!(configFnRtn.cmds instanceof Array) || !configFnRtn.cmds.length) {
+			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `cmds` property.');
 		}
-		if (typeof configData.opts !== 'object') {
-			throw new Error('`' + this.cmdName + '` command contains invalid `opts` data.');
+		if (typeof configFnRtn.opts !== 'object') {
+			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `opts` property.');
 		}
-		for (let i = 0; i < configData.cmds.length; i++) {
-			let cmdData = configData.cmds[i];
+		for (let i = 0; i < configFnRtn.cmds.length; i++) {
+			let cmdData = configFnRtn.cmds[i];
 			cmdData = typeof cmdData === 'string' ? { cmd: cmdData } : cmdData;
 
 			if (typeof cmdData !== 'object') {
-				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid data.');
+				throw new Error('`' + this.cmdName + '` command config contains a CMD with an invalid data type.');
 			}
-			cmdData = Object.assign({ cmd: '' }, { env: configData.env, opts: configData.opts }, cmdData);
-			configData.cmds[i] = cmdData; // Update config data object now with merged data.
+			cmdData = Object.assign({ cmd: '' }, { env: configFnRtn.env, opts: configFnRtn.opts }, cmdData);
+			configFnRtn.cmds[i] = cmdData; // Update config data object now with merged/massaged data.
 
 			if (typeof cmdData.env !== 'object') {
-				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `env` data.');
+				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `env` property.');
 			}
 			if (typeof cmdData.cmd !== 'string' || !cmdData.cmd) {
-				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `cmd` data.');
+				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `cmd` property.');
 			}
 			if (typeof cmdData.opts !== 'object') {
-				throw new Error('`' + this.cmdName + '` command `cmds` contains a CMD with invalid `opts` data.');
+				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `opts` property.');
 			}
 		}
-		return configData;
+		return configFnRtn as CMDConfigData;
 	}
 
 	/**
-	 * Populates a given CMD.
+	 * Populates a given env + CMD.
+	 *
+	 * @param   env Environment vars.
+	 * @param   cmd CMD + any args, or shell script to run.
+	 *
+	 * @returns     Populated environment vars as code + CMD w/ any args; or shell script to run.
 	 */
-	async populateCMD(env, cmd) {
-		env = await this.populateCMDEnvVars(env);
-		cmd = await this.populateCMDReplacementCodes(cmd);
-		return env ? env + ' ' + cmd : cmd;
+	protected async populateCMD(env: Env, cmd: string): Promise<string> {
+		const popEnv = await this.populateCMDEnvVars(env);
+		const popCMD = await this.populateCMDReplacementCodes(cmd);
+		return popEnv ? popEnv + ' ' + popCMD : popCMD;
 	}
 
 	/**
 	 * Populates environment vars for a given CMD.
+	 *
+	 * @param   env Environment vars.
+	 *
+	 * @returns     Populated environment vars, as code.
 	 */
-	async populateCMDEnvVars(env) {
+	protected async populateCMDEnvVars(env: Env): Promise<string> {
 		let vars = ''; // Initialize.
 
 		for (const [name, value] of Object.entries(env)) {
-			vars += ' export ' + name + '=' + se.quote(value) + ';';
+			vars += ' export ' + name + '=' + se.quote(String(value)) + ';';
 		}
 		return vars.trim();
 	}
 
 	/**
 	 * Populates replacement codes in a given CMD.
+	 *
+	 * @param   cmd CMD + any args, or shell script to run.
+	 *
+	 * @returns     Populated CMD + any args, or shell script to run.
 	 */
-	async populateCMDReplacementCodes(cmd) {
-		this.cmdArgs._.forEach((v, i) => {
+	protected async populateCMDReplacementCodes(cmd: string): Promise<string> {
+		(this.cmdArgs._ as Array<string | number>).forEach((v, i) => {
 			const pos = String(i + 1);
 			const escREPos = this.escRegExp(pos);
 
@@ -305,7 +412,7 @@ class Run {
 		cmd = cmd.replace(regexAllCMDArgPartsValues, (/* All arguments. Both formats supported for consistency. */) => {
 			const args = []; // Initialize list of arguments.
 
-			for (const v of this.cmdArgs._) {
+			for (const v of this.cmdArgs._ as Array<string | number>) {
 				args.push(String(v)); // Positional argument.
 			}
 			for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromNamedCMDArgs))) {
@@ -324,105 +431,12 @@ class Run {
 		return cmd.replace(/[\t ]+/gu, ' ').trim();
 	}
 
-	/*
+	/**
 	 * Escapes a string for use in a regular expression.
+	 *
+	 * @returns Escaped string for use in a regular expression.
 	 */
-
-	escRegExp(str) {
+	protected escRegExp(str: string): string {
 		return str.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 	}
 }
-
-/**
- * Utilities.
- */
-class u {
-	/**
-	 * Error utilities.
-	 */
-	static async error(title, text) {
-		if (!process.stdout.isTTY || !supportsColor?.has16m) {
-			return chalk.red(text); // No box.
-		}
-		return (
-			'\n' +
-			coloredBox(chalk.bold.red(text), {
-				margin: 0,
-				padding: 0.75,
-				textAlignment: 'left',
-
-				dimBorder: false,
-				borderStyle: 'round',
-				borderColor: '#551819',
-				backgroundColor: '',
-
-				titleAlignment: 'left',
-				title: chalk.bold.redBright('⚑ ' + title),
-			})
-		);
-	}
-
-	/**
-	 * Finale utilities.
-	 */
-	static async finale(title, text) {
-		if (!process.stdout.isTTY || !supportsColor?.has16m) {
-			return chalk.green(text); // No box.
-		}
-		return (
-			'\n' +
-			coloredBox(chalk.bold.hex('#ed5f3b')(text), {
-				margin: 0,
-				padding: 0.75,
-				textAlignment: 'left',
-
-				dimBorder: false,
-				borderStyle: 'round',
-				borderColor: '#8e3923',
-				backgroundColor: '',
-
-				titleAlignment: 'left',
-				title: chalk.bold.green('✓ ' + title),
-			})
-		);
-	}
-}
-
-/**
- * Yargs CLI config. ⛵🏴‍☠
- *
- * @see http://yargs.js.org/docs/
- */
-(async () => {
-	await yargs(hideBin(process.argv))
-		.command({
-			command: ['$0'],
-			desc: 'Runs one or more commands configured by a mad JS file; in sequence.',
-			builder: (yargs) => {
-				yargs
-					.options({
-						madrunDebug: {
-							type: 'boolean',
-							requiresArg: false,
-							demandOption: false,
-							default: false,
-							description: 'Debug?',
-						},
-					})
-					.check(async (/* args */) => {
-						return true;
-					});
-			},
-			handler: async (args) => {
-				await new Run(args).run();
-			},
-		})
-		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') err(chalk.gray(error.stack));
-			err(await u.error('Madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
-			process.exit(1);
-		})
-		.help('madrunHelp')
-		.version('madrunVersion', pkg.version)
-		.parse();
-})();

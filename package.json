@@ -1,43 +1,98 @@
 {
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "license": "MIT",
-  "version": "1.0.20",
-  "name": "@clevercanyon/madrun",
-  "description": "Runs commands configured by a JS file; in sequence.",
-  "repository": "https://github.com/clevercanyon/madrun",
-  "homepage": "https://github.com/clevercanyon/madrun#readme",
-  "bugs": "https://github.com/clevercanyon/madrun/issues",
-  "funding": "https://github.com/sponsors/clevercanyon",
-  "keywords": [
-    "clevercanyon"
-  ],
-  "author": {
-    "name": "Clever Canyon",
-    "url": "https://clevercanyon.com"
-  },
-  "type": "module",
-  "files": [
-    "/cli.js",
-    "/index.js"
-  ],
-  "bin": {
-    "madrun": "./cli.js"
-  },
-  "exports": "./index.js",
-  "module": "./index.js",
-  "main": "./index.js",
-  "unpkg": "./index.js",
-  "dependencies": {
-    "boxen": "^7.0.1",
-    "chalk": "^5.2.0",
-    "desm": "^1.3.0",
-    "find-up": "^6.3.0",
-    "lodash": "^4.17.21",
-    "shescape": "npm:@clevercanyon/shescape.fork@^1.6.4",
-    "spawn-please": "npm:@clevercanyon/spawn-please.fork@^2.0.2",
-    "yargs": "^17.6.2"
-  }
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"version": "1.0.21",
+	"license": "GPL-3.0-or-later",
+	"name": "@clevercanyon/madrun",
+	"description": "Runs commands configured by a JS file; in sequence.",
+	"repository": "https://github.com/clevercanyon/madrun",
+	"homepage": "https://github.com/clevercanyon/madrun#readme",
+	"bugs": "https://github.com/clevercanyon/madrun/issues",
+	"funding": "https://github.com/sponsors/clevercanyon",
+	"keywords": ["clevercanyon"],
+	"author": {
+		"name": "Clever Canyon",
+		"url": "https://clevercanyon.com"
+	},
+	"contributors": [],
+	"type": "module",
+	"files": ["/dist"],
+	"bin": {
+		"madrun": "./dist/cli.js"
+	},
+	"imports": {},
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs",
+			"types": "./dist/types/index.d.ts"
+		},
+		"./cli": {
+			"import": "./dist/cli.js",
+			"require": "./dist/cli.cjs",
+			"types": "./dist/types/cli.d.ts"
+		}
+	},
+	"sideEffects": ["./src/*.{html,scss,css,tsx,ts,jsx,mjs,js}"],
+	"module": "./dist/index.js",
+	"main": "./dist/index.cjs",
+	"browser": "",
+	"unpkg": "./dist/index.js",
+	"types": "./dist/types/index.d.ts",
+	"typesVersions": {
+		">=3.1": {
+			"./*": ["./dist/types/*"]
+		}
+	},
+	"dependencies": {
+		"boxen": "^7.0.1",
+		"chalk": "^5.2.0",
+		"desm": "^1.3.0",
+		"find-up": "^6.3.0",
+		"lodash": "^4.17.21",
+		"shescape": "npm:@clevercanyon/shescape.fork@^1.6.5",
+		"spawn-please": "npm:@clevercanyon/spawn-please.fork@^2.0.2",
+		"yargs": "^17.6.2"
+	},
+	"peerDependenciesMeta": {},
+	"bundleDependencies": [],
+	"devDependencies": {
+		"@clevercanyon/skeleton-dev-deps": "^1.0.86",
+		"@types/node": "^18.11.18",
+		"@types/yargs": "^17.0.20"
+	},
+	"overrides": {},
+	"cpu": ["x64", "arm64"],
+	"os": ["darwin", "linux"],
+	"engines": {
+		"node": "^19.2.0 || ^19.4.0",
+		"npm": "^8.19.3 || ^9.2.0"
+	},
+	"workspaces": [],
+	"config": {
+		"c10n": {
+			"&": {
+				"dotfiles": {
+					"lock": []
+				},
+				"build": {
+					"appType": "cma",
+					"targetEnv": "node"
+				},
+				"github": {
+					"teams": {
+						"engineers": "pull",
+						"architects": "push"
+					},
+					"labels": {},
+					"configVersion": "1.0.1"
+				},
+				"npmjs": {
+					"configVersions": "1.0.1,1.0.0"
+				}
+			}
+		}
+	}
 }
