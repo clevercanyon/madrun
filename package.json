@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "1.0.21",
+	"version": "1.0.22",
 	"license": "GPL-3.0-or-later",
 	"name": "@clevercanyon/madrun",
 	"description": "Runs commands configured by a JS file; in sequence.",
@@ -20,7 +20,7 @@
 	"type": "module",
 	"files": ["/dist"],
 	"bin": {
-		"madrun": "./dist/cli.js"
+		"madrun": "./dist/bin/cli.js"
 	},
 	"imports": {},
 	"exports": {
