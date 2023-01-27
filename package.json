@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "1.0.23",
+	"version": "1.0.25",
 	"license": "GPL-3.0-or-later",
 	"name": "@clevercanyon/madrun",
 	"description": "Runs commands configured by a JS file; in sequence.",
@@ -56,21 +56,23 @@
 		"spawn-please": "npm:@clevercanyon/spawn-please.fork@^2.0.2",
 		"yargs": "^17.6.2"
 	},
+	"peerDependencies": {},
 	"peerDependenciesMeta": {},
+	"optionalDependencies": {},
 	"bundleDependencies": [],
 	"devDependencies": {
-		"@clevercanyon/skeleton-dev-deps": "^1.0.86",
+		"@clevercanyon/skeleton-dev-deps": "^1.0.95",
 		"@types/node": "^18.11.18",
 		"@types/yargs": "^17.0.20"
 	},
 	"overrides": {},
+	"workspaces": [],
 	"cpu": ["x64", "arm64"],
 	"os": ["darwin", "linux"],
 	"engines": {
 		"node": "^19.2.0 || ^19.4.0",
 		"npm": "^8.19.3 || ^9.2.0"
 	},
-	"workspaces": [],
 	"config": {
 		"c10n": {
 			"&": {
@@ -87,7 +89,8 @@
 						"architects": "push"
 					},
 					"labels": {},
-					"configVersion": "1.0.1"
+					"configVersion": "1.0.1",
+					"envsVersion": ""
 				},
 				"npmjs": {
 					"configVersions": "1.0.1,1.0.0"
