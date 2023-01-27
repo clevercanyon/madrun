@@ -6,6 +6,95 @@
 import coloredBox from 'boxen';
 import chalk, { supportsColor } from 'chalk';
 
+import * as se from 'shescape';
+import spawnPlease from 'spawn-please';
+import { execSync } from 'node:child_process';
+
+import _ꓺomit from 'lodash/omit.js';
+
+const echo = process.stdout.write.bind(process.stdout);
+
+/**
+ * Propagates user environment variables.
+ */
+export const propagateUserEnvVars = (): void => {
+	process.env.NPM_TOKEN = process.env.USER_NPM_TOKEN || '';
+	process.env.GH_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+	process.env.GITHUB_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+	process.env.CLOUDFLARE_API_TOKEN = process.env.USER_CLOUDFLARE_TOKEN || '';
+};
+
+/**
+ * Escapes a string for use in a regular expression.
+ *
+ * @returns Escaped string for use in a regular expression.
+ */
+export const escRegExp = (str: string): string => {
+	return str.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+};
+
+/**
+ * Executes command line operation.
+ *
+ * @param   cmd  CMD + any args, or shell script to run.
+ * @param   opts Any additional execSync options.
+ *
+ * @returns      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
+ */
+export const exec = async (cmd: string, opts: { [x: string]: unknown } = {}): Promise<string> => {
+	return (
+		execSync(cmd, {
+			cwd: process.cwd(),
+			shell: 'bash',
+			stdio: 'inherit',
+			env: {
+				...process.env,
+				PARENT_IS_TTY:
+					process.stdout.isTTY || //
+					process.env.PARENT_IS_TTY
+						? 'true'
+						: 'false',
+			},
+			...opts,
+		}) || Buffer.from('')
+	).toString();
+};
+
+/**
+ * Spawns command line operation.
+ *
+ * @param   cmd  CMD name or path.
+ * @param   args Any CMD arguments.
+ * @param   opts Any additional spawn options.
+ *
+ * @returns      Empty string when `stdio: 'inherit'` (default). Stdout when `stdio: 'pipe'`.
+ */
+export const spawn = async (cmd: string, args: string[] = [], opts: { [x: string]: unknown } = {}): Promise<string> => {
+	if ('shell' in opts ? opts.shell : 'bash') {
+		// When using a shell, we must escape everything ourselves.
+		// i.e., Node does not escape `cmd` or `args` when a `shell` is given.
+		(cmd = se.quote(cmd)), (args = se.quoteAll(args));
+	}
+	return await spawnPlease(cmd, args, {
+		cwd: process.cwd(),
+		shell: 'bash',
+		stdio: 'inherit',
+		env: {
+			...process.env,
+			PARENT_IS_TTY:
+				process.stdout.isTTY || //
+				process.env.PARENT_IS_TTY
+					? 'true'
+					: 'false',
+		},
+		// Output handlers do not run when `stdio: 'inherit'` or `quiet: true`.
+		stdout: opts.quiet ? null : (buffer: Buffer) => echo(chalk.white(buffer.toString())),
+		stderr: opts.quiet ? null : (buffer: Buffer) => echo(chalk.gray(buffer.toString())),
+
+		..._ꓺomit(opts, ['quiet']),
+	});
+};
+
 /**
  * Outputs CLI error.
  *
