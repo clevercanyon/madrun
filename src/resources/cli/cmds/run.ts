@@ -31,6 +31,18 @@ export type Args = YargsꓺArgs<{
 	madrunDebug: boolean;
 }>;
 
+export interface CtxUtils {
+	cwd: string;
+	se: typeof se;
+	chalk: typeof chalk;
+
+	exec: typeof u.exec;
+	spawn: typeof u.spawn;
+
+	findUp: typeof findUp;
+	configFiles: typeof configFiles;
+}
+
 export interface Env {
 	[x: string]: unknown;
 }
@@ -53,11 +65,7 @@ export interface Config {
 export type CMDConfigFn = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCtxUtils) => Promise<CMDConfigFnRtns>;
 export type CMDConfigFnSync = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCtxUtils) => CMDConfigFnRtns;
 export type CMDConfigFnCMDArgs = Omit<Args, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
-export interface CMDConfigFnCtxUtils {
-	cwd: string;
-	se: typeof se;
-	chalk: typeof chalk;
-}
+export interface CMDConfigFnCtxUtils extends CtxUtils {}
 export type CMDConfigFnRtns =
 	| string
 	| CMDFn
@@ -86,19 +94,9 @@ export type CMDConfigFnRtnObjCMDs =
 export type CMDFn = (cmdArgs: CMDFnArgs, ctxUtils: CMDFnCtxUtils) => Promise<void>;
 export type CMDFnSync = (cmdArgs: CMDFnArgs, ctxUtils: CMDFnCtxUtils) => void;
 export type CMDFnArgs = Omit<Args, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
-export interface CMDFnCtxUtils {
-	cwd: string;
-	se: typeof se;
-	chalk: typeof chalk;
-
+export interface CMDFnCtxUtils extends CtxUtils {
 	env: Env;
 	opts: Opts;
-
-	exec: typeof u.exec;
-	spawn: typeof u.spawn;
-
-	findUp: typeof findUp;
-	configFiles: typeof configFiles;
 }
 
 export interface CMDConfigData {
@@ -138,7 +136,12 @@ export default class Run {
 	/**
 	 * Config file directory as CWD.
 	 */
-	protected cwd: string;
+	protected cwd: string; // Matching config file.
+
+	/**
+	 * Context/utilities.
+	 */
+	protected ctxUtils: CtxUtils;
 
 	/**
 	 * Constructor.
@@ -159,9 +162,20 @@ export default class Run {
 		if (this.configFile) {
 			this.cwd = path.dirname(this.configFile);
 		} else {
-			this.cwd = process.cwd();
-			this.configFile = 'default';
+			this.cwd = process.cwd(); // No config file.
+			this.configFile = 'default'; // See below.
 		}
+		this.ctxUtils = {
+			cwd: this.cwd, // CWD.
+			se, // Shell escape|quote.
+			chalk, // Chalk string colorizer.
+
+			exec: u.exec, // Exec utility.
+			spawn: u.spawn, // Spawn utility.
+
+			findUp: findUp, // findUp utility.
+			configFiles, // Config files array.
+		};
 		if (this.args.madrunDebug) {
 			log(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
 			log(chalk.black('> configFile:') + ' ' + chalk.gray(this.configFile));
@@ -189,21 +203,7 @@ export default class Run {
 					log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
 					log(chalk.black('> ---'));
 				}
-				const ctxUtils = {
-					cwd: this.cwd, // CWD.
-					se, // Shell escape|quote.
-					chalk, // Chalk string colorizer.
-
-					env: cmdData.env, // Env vars for CMD.
-					opts: cmdData.opts, // Options for CMD.
-
-					exec: u.exec, // Exec utility.
-					spawn: u.spawn, // Spawn utility.
-
-					findUp: findUp, // findUp utility.
-					configFiles, // Config files array.
-				};
-				await cmdData.cmd(this.cmdArgs, ctxUtils);
+				await cmdData.cmd(this.cmdArgs, { ...this.ctxUtils, env: cmdData.env, opts: cmdData.opts });
 			} else {
 				// Populates env vars & replacement codes in given CMD.
 				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
@@ -310,11 +310,6 @@ export default class Run {
 	 * @returns CMD configuration data.
 	 */
 	protected async cmdConfigData(): Promise<CMDConfigData> {
-		const ctxUtils = {
-			cwd: this.cwd, // CWD.
-			se, // Shell escape|quote.
-			chalk, // Chalk string colorizer.
-		};
 		const configFn = await this.cmdConfigFn();
 
 		if (null === configFn && this.cmdName.startsWith('on::')) {
@@ -322,7 +317,7 @@ export default class Run {
 		} else if (null === configFn) {
 			throw new Error('`' + this.cmdName + '` command is unavailable.');
 		}
-		let configFnRtn = await configFn(this.cmdArgs, ctxUtils);
+		let configFnRtn = await configFn(this.cmdArgs, this.ctxUtils);
 
 		configFnRtn = configFnRtn instanceof Array ? { cmds: configFnRtn } : configFnRtn;
 		configFnRtn = typeof configFnRtn === 'function' ? { cmds: [configFnRtn] } : configFnRtn;
