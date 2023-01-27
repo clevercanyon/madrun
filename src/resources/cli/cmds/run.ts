@@ -39,7 +39,16 @@ export interface Opts {
 }
 
 export interface Config {
-	[x: string]: string | string[] | CMDConfigFn | CMDConfigFnSync;
+	[x: string]:
+		| string
+		| CMDConfigFn
+		| CMDConfigFnSync
+		| Array<string | CMDFn | CMDFnSync>
+		| {
+				env?: Env;
+				cmds: CMDConfigFnRtnObjCMDs;
+				opts?: Opts;
+		  };
 }
 export type CMDConfigFn = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCtxUtils) => Promise<CMDConfigFnRtns>;
 export type CMDConfigFnSync = (cmdArgs: CMDConfigFnCMDArgs, ctxUtils: CMDConfigFnCtxUtils) => CMDConfigFnRtns;
@@ -276,8 +285,11 @@ export default class Run {
 					if (typeof cmd !== 'string' && typeof cmd !== 'function') {
 						throw new Error('`' + this.cmdName + '` command has an invalid data type.');
 					}
-					return cmd; // Strings and functions are nice.
+					return cmd; // Strings and are nice.
 				});
+		} else if (configFn && typeof configFn === 'object') {
+			const configFnObj = configFn; // Object pointer.
+			configFn = async (): Promise<CMDConfigFnRtns> => configFnObj;
 		}
 		if (null === configFn) {
 			throw new Error('`' + this.cmdName + '` command is unavailable.');
@@ -316,20 +328,21 @@ export default class Run {
 		configFnRtn = typeof configFnRtn === 'function' ? { cmds: [configFnRtn] } : configFnRtn;
 		configFnRtn = typeof configFnRtn === 'string' ? { cmds: '' === configFnRtn ? [] : [configFnRtn] } : configFnRtn;
 
-		if (typeof configFnRtn !== 'object') {
+		if (null === configFnRtn || typeof configFnRtn !== 'object') {
 			throw new Error('`' + this.cmdName + '` command config has an invalid data type.');
 		}
 		configFnRtn = Object.assign({ env: {}, cmds: [], opts: {} }, configFnRtn);
+		(configFnRtn.env = configFnRtn.env || {}), (configFnRtn.opts = configFnRtn.opts || {});
 		configFnRtn.cmds = typeof configFnRtn.cmds === 'function' ? [configFnRtn.cmds] : configFnRtn.cmds;
 		configFnRtn.cmds = typeof configFnRtn.cmds === 'string' ? ('' === configFnRtn.cmds ? [] : [configFnRtn.cmds]) : configFnRtn.cmds;
 
-		if (typeof configFnRtn.env !== 'object') {
+		if (null === configFnRtn.env || typeof configFnRtn.env !== 'object') {
 			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `env` property.');
 		}
 		if (!(configFnRtn.cmds instanceof Array) || !configFnRtn.cmds.length) {
 			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `cmds` property.');
 		}
-		if (typeof configFnRtn.opts !== 'object') {
+		if (null === configFnRtn.opts || typeof configFnRtn.opts !== 'object') {
 			throw new Error('`' + this.cmdName + '` command config contains invalid data for derived `opts` property.');
 		}
 		for (let i = 0; i < configFnRtn.cmds.length; i++) {
@@ -337,13 +350,14 @@ export default class Run {
 			cmdData = typeof cmdData === 'string' ? { cmd: cmdData } : cmdData;
 			cmdData = typeof cmdData === 'function' ? { cmd: cmdData } : cmdData;
 
-			if (typeof cmdData !== 'object') {
+			if (null === cmdData || typeof cmdData !== 'object') {
 				throw new Error('`' + this.cmdName + '` command config contains a CMD with an invalid data type.');
 			}
 			cmdData = Object.assign({ cmd: '' }, { env: configFnRtn.env, opts: configFnRtn.opts }, cmdData);
+			(cmdData.env = cmdData.env || {}), (cmdData.opts = cmdData.opts || {}); // Catch empty values.
 			configFnRtn.cmds[i] = cmdData; // Update config data object now with merged/massaged data.
 
-			if (typeof cmdData.env !== 'object') {
+			if (null === cmdData.env || typeof cmdData.env !== 'object') {
 				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `env` property.');
 			}
 			if ((typeof cmdData.cmd !== 'string' && typeof cmdData.cmd !== 'function') || !cmdData.cmd) {
@@ -353,7 +367,7 @@ export default class Run {
 				const cmdFnSync = cmdData.cmd; // Function pointer.
 				cmdData.cmd = async (...args): Promise<void> => (cmdFnSync as unknown as CMDFnSync)(...args);
 			}
-			if (typeof cmdData.opts !== 'object') {
+			if (null === cmdData.opts || typeof cmdData.opts !== 'object') {
 				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `opts` property.');
 			}
 		}
