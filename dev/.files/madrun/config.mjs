@@ -51,13 +51,13 @@ export default {
 	},
 	'update:projects': './dev/.files/bin/update.mjs projects {{@}}',
 
-	'wrangler': async () => 'CLOUDFLARE_API_TOKEN="${USER_CLOUDFLARE_TOKEN}" npx wrangler {{@}}',
+	'wrangler': 'CLOUDFLARE_API_TOKEN="${USER_CLOUDFLARE_TOKEN}" npx wrangler {{@}}',
 
-	'on::madrun:default:new': () => [
+	'on::madrun:default:new': [
 		'npx @clevercanyon/madrun install:project',
 		async () => {
 			let u = './dev/.files/bin/includes/utilities.mjs';
-			u = (await import(path.resolve(__dirname, u))).default;
+			u = (await import(path.resolve(projDir, u))).default;
 
 			await fsp.rm(path.resolve(projDir, './.env.me'), { force: true });
 			await fsp.rm(path.resolve(projDir, './.env.vault'), { force: true });

@@ -266,11 +266,14 @@ export default class Run {
 			return null; // Event w/ no listener.
 		}
 		if (typeof configFn === 'string') {
-			configFn = async (): Promise<CMDConfigFnRtns> => configFn as unknown as string;
+			const configFnStr = configFn; // String pointer.
+			configFn = async (): Promise<CMDConfigFnRtns> => configFnStr;
 		}
 		if (configFn instanceof Array) {
+			const configFnArr = configFn; // Array pointer.
+
 			configFn = async (): Promise<CMDConfigFnRtns> =>
-				(configFn as unknown as Array<unknown>).map((cmd) => {
+				configFnArr.map((cmd) => {
 					if (typeof cmd !== 'string') {
 						throw new Error('`' + this.cmdName + '` command has an invalid data type.');
 					}
@@ -284,7 +287,7 @@ export default class Run {
 			throw new Error('`' + this.cmdName + '` command has an invalid data type.');
 		}
 		if (configFn.constructor.name !== 'AsyncFunction') {
-			const configFnSync = configFn.bind({}); // Clones old function.
+			const configFnSync = configFn; // Function pointer.
 			configFn = async (...args): Promise<CMDConfigFnRtns> => (configFnSync as unknown as CMDConfigFnSync)(...args);
 		}
 		return configFn as CMDConfigFn;
@@ -348,7 +351,7 @@ export default class Run {
 				throw new Error('`' + this.cmdName + '` command config contains a CMD with invalid data for its derived `cmd` property.');
 			}
 			if (typeof cmdData.cmd === 'function' && cmdData.cmd.constructor.name !== 'AsyncFunction') {
-				const cmdFnSync = cmdData.cmd.bind({}); // Clones old function.
+				const cmdFnSync = cmdData.cmd; // Function pointer.
 				cmdData.cmd = async (...args): Promise<void> => (cmdFnSync as unknown as CMDFnSync)(...args);
 			}
 			if (typeof cmdData.opts !== 'object') {
