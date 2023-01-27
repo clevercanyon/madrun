@@ -271,13 +271,12 @@ export default class Run {
 		}
 		if (configFn instanceof Array) {
 			const configFnArr = configFn; // Array pointer.
-
 			configFn = async (): Promise<CMDConfigFnRtns> =>
 				configFnArr.map((cmd) => {
-					if (typeof cmd !== 'string') {
+					if (typeof cmd !== 'string' && typeof cmd !== 'function') {
 						throw new Error('`' + this.cmdName + '` command has an invalid data type.');
 					}
-					return cmd; // Strings are nice.
+					return cmd; // Strings and functions are nice.
 				});
 		}
 		if (null === configFn) {
