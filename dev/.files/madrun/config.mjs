@@ -91,6 +91,11 @@ export default {
 					'config.c10n.&.npmjs.configVersions',
 				],
 			});
+			const readmeFile = path.resolve(projDir, './README.md');
+			let readme = fs.readFileSync(readmeFile).toString(); // Markdown.
+
+			readme = readme.replace(/@clevercanyon\/[^/?#\s]+/gu, '@clevercanyon/' + projSlug);
+			await fsp.writeFile(readmeFile, readme);
 		},
 	],
 };
