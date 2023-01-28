@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dirname } from 'desm';
 
-import yargs from 'yargs';
+import yArgs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import chalk from 'chalk';
@@ -120,7 +120,9 @@ class Project {
  * @see http://yargs.js.org/docs/
  */
 void (async () => {
-	await yargs(hideBin(process.argv))
+	const yargs = yArgs(hideBin(process.argv));
+	await yargs
+		.scriptName('madrun install')
 		.parserConfiguration({
 			'dot-notation': false,
 			'strip-aliased': true,
@@ -128,6 +130,9 @@ void (async () => {
 			'greedy-arrays': true,
 			'boolean-negation': false,
 		})
+		.strict() // No arbitrary commands/options.
+		.wrap(Math.max(80, yargs.terminalWidth() / 2))
+
 		.command({
 			command: ['project'],
 			describe: 'Installs NPM packages, envs, and builds distro.',
@@ -163,6 +168,5 @@ void (async () => {
 			log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
-		.strict()
 		.parse();
 })();

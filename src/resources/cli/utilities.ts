@@ -3,6 +3,8 @@
  * CLI.
  */
 
+import _ꓺomit from 'lodash/omit.js';
+
 import coloredBox from 'boxen';
 import chalk, { supportsColor } from 'chalk';
 
@@ -10,19 +12,30 @@ import * as se from 'shescape';
 import spawnPlease from 'spawn-please';
 import { execSync } from 'node:child_process';
 
-import _ꓺomit from 'lodash/omit.js';
-
-const echo = process.stdout.write.bind(process.stdout);
+/**
+ * Logs to stdout.
+ */
+export const log = console.log;
 
 /**
- * Propagates user environment variables.
+ * Logs to stderr.
  */
-export const propagateUserEnvVars = (): void => {
-	process.env.NPM_TOKEN = process.env.USER_NPM_TOKEN || '';
-	process.env.GH_TOKEN = process.env.USER_GITHUB_TOKEN || '';
-	process.env.GITHUB_TOKEN = process.env.USER_GITHUB_TOKEN || '';
-	process.env.CLOUDFLARE_API_TOKEN = process.env.USER_CLOUDFLARE_TOKEN || '';
-};
+export const err = console.error;
+
+/**
+ * Echoes output to stdout.
+ */
+export const echo = process.stdout.write.bind(process.stdout);
+
+/**
+ * `$ madrun` config file names.
+ */
+export const configFiles = ['.madrun.json', '.madrun.js', '.madrun.cjs', '.madrun.mjs'];
+
+/**
+ * Args to omit from named CMD args.
+ */
+export const omitFromNamedCMDArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'madrunDebug'];
 
 /**
  * Escapes a string for use in a regular expression.
@@ -153,4 +166,14 @@ export const finale = async (title: string, text: string): Promise<string> => {
 			title: chalk.bold.green('✓ ' + title),
 		})
 	);
+};
+
+/**
+ * Propagates user environment variables.
+ */
+export const propagateUserEnvVars = (): void => {
+	process.env.NPM_TOKEN = process.env.USER_NPM_TOKEN || '';
+	process.env.GH_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+	process.env.GITHUB_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+	process.env.CLOUDFLARE_API_TOKEN = process.env.USER_CLOUDFLARE_TOKEN || '';
 };

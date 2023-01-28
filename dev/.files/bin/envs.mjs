@@ -13,7 +13,7 @@ import path from 'node:path';
 import { dirname } from 'desm';
 import fsp from 'node:fs/promises';
 
-import yargs from 'yargs';
+import yArgs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import chalk from 'chalk';
@@ -141,7 +141,10 @@ class Install {
 			log(chalk.gray('Installing all Dotenv Vault envs, which requires login.'));
 			if (!this.args.dryRun) {
 				await u.spawn('npx', ['dotenv-vault', 'login', '--yes']);
-				await u.spawn('npx', ['dotenv-vault', 'open', '--yes']);
+
+				if (this.args.open) {
+					await u.spawn('npx', ['dotenv-vault', 'open', '--yes']);
+				}
 			}
 		}
 
@@ -267,6 +270,60 @@ class Pull {
 		 */
 
 		log(await u.finale('Success', 'Dotenv Vault pulling complete.'));
+	}
+}
+
+/**
+ * Compile command.
+ */
+class Compile {
+	/**
+	 * Constructor.
+	 */
+	constructor(args) {
+		this.args = args;
+	}
+
+	/**
+	 * Runs CMD.
+	 */
+	async run() {
+		await this.compile();
+
+		if (this.args.dryRun) {
+			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+		}
+	}
+
+	/**
+	 * Runs compile.
+	 */
+	async compile() {
+		/**
+		 * Displays preamble.
+		 */
+
+		log(chalk.green('Compiling all Dotenv Vault envs.'));
+
+		/**
+		 * Checks if project has a Dotenv Vault.
+		 */
+
+		if (!(await u.isEnvsVault())) {
+			throw new Error('There are no Dotenv Vault envs to compile.');
+		}
+
+		/**
+		 * Compiles all Dotenv Vault envs.
+		 */
+
+		await u.envsCompile({ dryRun: this.args.dryRun });
+
+		/**
+		 * Signals completion with success.
+		 */
+
+		log(await u.finale('Success', 'Dotenv Vault compilation complete.'));
 	}
 }
 
@@ -438,7 +495,9 @@ class Decrypt {
  * @see http://yargs.js.org/docs/
  */
 void (async () => {
-	await yargs(hideBin(process.argv))
+	const yargs = yArgs(hideBin(process.argv));
+	await yargs
+		.scriptName('madrun envs')
 		.parserConfiguration({
 			'dot-notation': false,
 			'strip-aliased': true,
@@ -446,9 +505,12 @@ void (async () => {
 			'greedy-arrays': true,
 			'boolean-negation': false,
 		})
+		.strict() // No arbitrary commands/options.
+		.wrap(Math.max(80, yargs.terminalWidth() / 2))
+
 		.command({
 			command: 'install',
-			describe: 'Installs all envs for dotenv vault.',
+			describe: 'Installs all envs for Dotenv Vault.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -459,13 +521,23 @@ void (async () => {
 							default: false,
 							description: 'Perform a new (fresh) install?',
 						},
+						open: {
+							type: 'boolean',
+							requiresArg: false,
+							demandOption: false,
+							default: false,
+							description: // prettier-ignore
+								'When not `--new`, open the Dotenv Vault in a browser tab upon logging in?' +
+								' If not set explicitly, only opens Dotenv Vault for login, not for editing.' +
+								' Note: This option has no effect when `--new` is given.',
+						},
 						pull: {
 							type: 'boolean',
 							requiresArg: false,
 							demandOption: false,
 							default: false,
 							description: // prettier-ignore
-								'When not `--new`, pull latest envs from dotenv vault?' +
+								'When not `--new`, pull latest envs from Dotenv Vault?' +
 								' If not set explicitly, only pulls when main env is missing.' +
 								' Note: This option has no effect when `--new` is given.',
 						},
@@ -490,7 +562,7 @@ void (async () => {
 		})
 		.command({
 			command: 'push',
-			describe: 'Pushes all envs to dotenv vault.',
+			describe: 'Pushes all envs to Dotenv Vault.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -515,7 +587,7 @@ void (async () => {
 		})
 		.command({
 			command: 'pull',
-			describe: 'Pulls all envs from dotenv vault.',
+			describe: 'Pulls all envs from Dotenv Vault.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -539,8 +611,33 @@ void (async () => {
 			},
 		})
 		.command({
+			command: 'compile',
+			describe: 'Compiles all envs into `./dev/.envs/comp/.env.[env].json` JSON files.',
+			builder: (yargs) => {
+				return yargs
+					.options({
+						dryRun: {
+							type: 'boolean',
+							requiresArg: false,
+							demandOption: false,
+							default: false,
+							description: 'Dry run?',
+						},
+					})
+					.check(async (/* args */) => {
+						if (!(await u.isInteractive())) {
+							throw new Error('This *must* be performed interactively.');
+						}
+						return true;
+					});
+			},
+			handler: async (args) => {
+				await new Compile(args).run();
+			},
+		})
+		.command({
 			command: 'keys',
-			describe: 'Retrieves decryption keys for all envs.',
+			describe: 'Retrieves Dotenv Vault decryption keys for all envs.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -565,7 +662,7 @@ void (async () => {
 		})
 		.command({
 			command: 'encrypt',
-			describe: 'Encrypts all envs into `.env.vault`.',
+			describe: 'Encrypts all envs into `.env.vault`; powered by Dotenv Vault.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -590,7 +687,7 @@ void (async () => {
 		})
 		.command({
 			command: 'decrypt',
-			describe: 'Decrypts `.env.vault` env(s) for the given key(s).',
+			describe: 'Decrypts `.env.vault` env(s) for the given key(s); powered by Dotenv Vault.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -625,6 +722,5 @@ void (async () => {
 			log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
-		.strict()
 		.parse();
 })();

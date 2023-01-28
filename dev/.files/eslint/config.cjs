@@ -62,7 +62,7 @@ module.exports = {
 		'**/bower_components/**',
 	]),
 	parser: 'espree', // Default parser.
-
+	// <https://o5p.me/RARPvV>, <https://o5p.me/U4DpMN>.
 	parserOptions: (commonParserOptions = {
 		ecmaVersion: 2021,
 		ecmaFeatures: {
@@ -79,7 +79,7 @@ module.exports = {
 	}),
 	overrides: [
 		{
-			files: ['**/*.{tsx,ts}'],
+			files: ['**/*.{ts,tsx,cts,ctsx,mts,mtsx}'],
 			// ignorePatterns : commonIgnorePatterns,
 			// ↑ Ignore patterns are global and not allowed here.
 
@@ -105,7 +105,7 @@ module.exports = {
 			settings: {
 				...commonSettings,
 				'import/parsers': {
-					'@typescript-eslint/parser': ['.tsx', '.ts'],
+					'@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.ctsx', '.mts', '.mtsx'],
 				},
 				'import/resolver': {
 					typescript: {

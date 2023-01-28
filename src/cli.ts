@@ -3,7 +3,7 @@
  */
 
 import chalk from 'chalk';
-import yargs from 'yargs';
+import yArgs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import Run from './resources/cli/cmds/run.js';
@@ -21,7 +21,9 @@ declare const $$__APP_PKG_VERSION__$$: string;
  * @see http://yargs.js.org/docs/
  */
 void (async () => {
-	await yargs(hideBin(process.argv))
+	const yargs = yArgs(hideBin(process.argv));
+	await yargs
+		.scriptName('madrun')
 		.parserConfiguration({
 			'dot-notation': false,
 			'strip-aliased': true,
@@ -29,6 +31,10 @@ void (async () => {
 			'greedy-arrays': true,
 			'boolean-negation': false,
 		})
+		.help('madrunHelp') // Version passed explicitly.
+		.version('madrunVersion', $$__APP_PKG_VERSION__$$)
+		.wrap(Math.max(80, yargs.terminalWidth() / 2))
+
 		.command({
 			command: ['$0'],
 			describe: 'Runs one or more commands configured by a mad JS file; in sequence.',
@@ -53,10 +59,8 @@ void (async () => {
 		})
 		.fail(async (message, error /* , yargs */) => {
 			if (error?.stack && typeof error.stack === 'string') err(chalk.gray(error.stack));
-			err(await u.error('Madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
+			err(await u.error('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
-		.help('madrunHelp')
-		.version('madrunVersion', $$__APP_PKG_VERSION__$$)
 		.parse();
 })();

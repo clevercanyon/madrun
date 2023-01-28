@@ -18,7 +18,7 @@ import fsp from 'node:fs/promises';
 import mm from 'micromatch';
 import { globby } from 'globby';
 
-import yargs from 'yargs';
+import yArgs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import chalk from 'chalk';
@@ -184,13 +184,17 @@ class Project {
 		}
 
 		/**
-		 * Pushes to Dotenv Vault, then encrypts, `./.env.vault`.
+		 * Pushes all Dotenv Vault envs; else recompiles only.
 		 */
-		// Also syncs GitHub repo environments using org-wide standards.
 
 		if (this.args.repos && (await u.isEnvsVault())) {
-			log(chalk.green('Repos will update, so pushing, then re-encrypting `./.env.vault`.'));
+			log(chalk.green('Repos will update, so pushing all Dotenv Vault envs.'));
+			// Also syncs GitHub repo environments using org-wide standards.
 			await u.envsPush({ dryRun: this.args.dryRun });
+			//
+		} else if (await u.isEnvsVault()) {
+			log(chalk.green('Recompiling all Dotenv Vault `.env*` files.'));
+			await u.envsCompile({ dryRun: this.args.dryRun });
 		}
 
 		/**
@@ -219,19 +223,19 @@ class Project {
 
 		if (this.args.repos) {
 			/**
-			 * Gets `./package.json` with a potentially incremented version.
+			 * Parses current `./package.json`.
 			 */
 
-			const pkg = await u.pkg(); // See version incrementation above.
+			const pkg = await u.pkg(); // Potentially incremented version.
 
 			/**
 			 * Publishes a new version of NPM package(s).
 			 */
-			// Also checks org-wide npmjs package standards.
 
 			if (this.args.pkgs) {
 				if (await u.isNPMPkgPublishable({ mode: this.args.mode })) {
 					log(chalk.green('Publishing NPM package.'));
+					// Also checks org-wide npmjs package standards.
 					await u.npmPublish({ dryRun: this.args.dryRun });
 					//
 				} else if (await u.isNPMPkg()) {
@@ -395,7 +399,7 @@ class Projects {
 			}
 
 			/**
-			 * Madruns script(s) for current glob result.
+			 * Runs script(s) for current glob result.
 			 */
 
 			if (this.args.run.length) {
@@ -442,7 +446,9 @@ class Projects {
  * @see http://yargs.js.org/docs/
  */
 void (async () => {
-	await yargs(hideBin(process.argv))
+	const yargs = yArgs(hideBin(process.argv));
+	await yargs
+		.scriptName('madrun update')
 		.parserConfiguration({
 			'dot-notation': false,
 			'strip-aliased': true,
@@ -450,6 +456,9 @@ void (async () => {
 			'greedy-arrays': true,
 			'boolean-negation': false,
 		})
+		.strict() // No arbitrary commands/options.
+		.wrap(Math.max(80, yargs.terminalWidth() / 2))
+
 		.command({
 			command: ['dotfiles'],
 			describe: 'Updates project dotfiles.',
@@ -638,6 +647,5 @@ void (async () => {
 			log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
-		.strict()
 		.parse();
 })();

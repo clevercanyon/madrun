@@ -3,24 +3,17 @@
  * CLI.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { findUp, findUpSync } from 'find-up';
+import _ꓺomit from 'lodash/omit.js';
+import * as u from '../utilities.js';
 
 import chalk from 'chalk';
 import * as se from 'shescape';
 
-import _ꓺomit from 'lodash/omit.js';
-import * as u from '../utilities.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { findUp, findUpSync } from 'find-up';
 
 import type { Arguments as YargsꓺArgs } from 'yargs';
-const { log } = console; // Shorter reference.
-
-const configFiles = ['.madrun.js', '.madrun.cjs', '.madrun.mjs'];
-const regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu');
-const regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
-const regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
-const omitFromNamedCMDArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'madrunDebug'];
 
 /**
  * Interfaces.
@@ -33,14 +26,19 @@ export type Args = YargsꓺArgs<{
 
 export interface CtxUtils {
 	cwd: string;
+
 	se: typeof se;
 	chalk: typeof chalk;
+
+	log: typeof u.log;
+	err: typeof u.err;
+	echo: typeof u.echo;
 
 	exec: typeof u.exec;
 	spawn: typeof u.spawn;
 
 	findUp: typeof findUp;
-	configFiles: typeof configFiles;
+	configFiles: typeof u.configFiles;
 }
 
 export interface Env {
@@ -136,7 +134,7 @@ export default class Run {
 	/**
 	 * Config file directory as CWD.
 	 */
-	protected cwd: string; // Matching config file.
+	protected cwd: string; // Matches config file.
 
 	/**
 	 * Context/utilities.
@@ -152,39 +150,44 @@ export default class Run {
 		this.cmdName = String(args._?.[0] || '');
 		this.cmdArgs = {
 			_: args._.slice(1),
-			..._ꓺomit(args, omitFromNamedCMDArgs),
+			..._ꓺomit(args, u.omitFromNamedCMDArgs),
 		};
 		if ('' === this.cmdName) {
 			throw new Error('Missing command name.');
 		}
-		this.configFile = findUpSync(configFiles) as string;
+		this.configFile = findUpSync(u.configFiles) as string;
 
 		if (this.configFile) {
 			this.cwd = path.dirname(this.configFile);
 		} else {
-			this.cwd = process.cwd(); // No config file.
-			this.configFile = 'default'; // See below.
+			this.cwd = process.cwd();
+			this.configFile = 'default';
 		}
 		this.ctxUtils = {
 			cwd: this.cwd, // CWD.
-			se, // Shell escape|quote.
+
+			se, // Shell escape|quote utility.
 			chalk, // Chalk string colorizer.
 
-			exec: u.exec, // Exec utility.
-			spawn: u.spawn, // Spawn utility.
+			log: u.log, // Logs to stdout.
+			err: u.err, // Logs to stderr.
+			echo: u.echo, // Echoes to stdout.
 
-			findUp: findUp, // findUp utility.
-			configFiles, // Config files array.
+			exec: u.exec, // Exec CMD utility.
+			spawn: u.spawn, // Spawn CMD utility.
+
+			findUp: findUp, // findUp config file utility.
+			configFiles: u.configFiles, // `.madrun.*` config files.
 		};
 		if (this.args.madrunDebug) {
-			log(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
-			log(chalk.black('> configFile:') + ' ' + chalk.gray(this.configFile));
-			log(chalk.black('> args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
-			log(chalk.black('> ---'));
+			u.log(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
+			u.log(chalk.black('> configFile:') + ' ' + chalk.gray(this.configFile));
+			u.log(chalk.black('> args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
+			u.log(chalk.black('> ---'));
 
-			log(chalk.black('> cmdName:') + ' ' + chalk.gray(this.cmdName));
-			log(chalk.black('> cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
-			log(chalk.black('> ---'));
+			u.log(chalk.black('> cmdName:') + ' ' + chalk.gray(this.cmdName));
+			u.log(chalk.black('> cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
+			u.log(chalk.black('> ---'));
 		}
 	}
 
@@ -192,16 +195,16 @@ export default class Run {
 	 * Runs CMD.
 	 */
 	public async run(): Promise<void> {
-		await this.maybeInstallNodeModules();
+		await this.maybeInstallPackageDependencies();
 		const cmdConfigData = await this.cmdConfigData();
 
 		for (const cmdData of cmdConfigData.cmds) {
 			if (typeof cmdData.cmd === 'function') {
 				if (this.args.madrunDebug) {
-					log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					log(chalk.black('> rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					log(chalk.black('> ---'));
+					u.log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					u.log(chalk.black('> rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
+					u.log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					u.log(chalk.black('> ---'));
 				}
 				await cmdData.cmd(this.cmdArgs, { ...this.ctxUtils, env: cmdData.env, opts: cmdData.opts });
 			} else {
@@ -209,11 +212,11 @@ export default class Run {
 				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
 				if (this.args.madrunDebug) {
-					log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					log(chalk.black('> rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
-					log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					log(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
-					log(chalk.black('> ---'));
+					u.log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					u.log(chalk.black('> rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
+					u.log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					u.log(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
+					u.log(chalk.black('> ---'));
 				}
 				await u.exec(cmd, { cwd: this.cwd, ...cmdData.opts });
 			}
@@ -221,9 +224,9 @@ export default class Run {
 	}
 
 	/**
-	 * Installs node modules; maybe.
+	 * Installs project’s package dependencies; maybe.
 	 */
-	protected async maybeInstallNodeModules(): Promise<void> {
+	protected async maybeInstallPackageDependencies(): Promise<void> {
 		const pkgFile = path.resolve(this.cwd, './package.json');
 		const nodeModulesDir = path.resolve(this.cwd, './node_modules');
 
@@ -232,12 +235,13 @@ export default class Run {
 		}
 		const pkgLockFile = path.resolve(this.cwd, './package-lock.json');
 		const npmShrinkwrapFile = path.resolve(this.cwd, './npm-shrinkwrap.json');
+		const canInstallClean = fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile);
 
 		if (this.args.madrunDebug) {
-			log(chalk.black('> Auto-installing node modules.'));
-			log(chalk.black('> ---'));
+			u.log(chalk.black('> Auto-installing NPM package dependencies.'));
+			u.log(chalk.black('> ---'));
 		}
-		await u.spawn('npm', fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile) ? ['ci'] : ['install'], { cwd: this.cwd });
+		await u.spawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
 	}
 
 	/**
@@ -251,10 +255,11 @@ export default class Run {
 
 		if ('default' === this.configFile) {
 			config = (await import('../../../default.js')).default as Config;
+			//
+		} else if (this.configFile.endsWith('.json')) {
+			config = (await import(configFile, { assert: { type: 'json' } })) as Config;
 		} else {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			config = (await import(configFile)).default as Config;
+			config = ((await import(configFile)) as { default: unknown }).default as Config;
 		}
 		if (typeof config !== 'object') {
 			throw new Error('`' + path.basename(configFile) + '` config failure.');
@@ -408,52 +413,68 @@ export default class Run {
 	 */
 	protected async populateCMDReplacementCodes(cmd: string): Promise<string> {
 		(this.cmdArgs._ as Array<string | number>).forEach((v, i) => {
-			const pos = String(i + 1);
-			const escREPos = u.escRegExp(pos);
+			const position = String(i + 1);
+			const escRegExpPosition = u.escRegExp(position);
+			const quotedArgValue = se.quote(String(v));
 
-			const argValue = se.quote(String(v));
-			// Both formats supported for consistency, but always populated by value.
+			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
+			const regExpArgValue = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
 
-			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escREPos + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
-			const regExpArgValue = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escREPos + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
-
-			cmd = cmd.replace(regExpArgParts, argValue).replace(regExpArgValue, argValue);
+			cmd = cmd.replace(regExpArgParts, quotedArgValue);
+			cmd = cmd.replace(regExpArgValue, quotedArgValue);
 		});
-		for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromNamedCMDArgs))) {
+		for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, u.omitFromNamedCMDArgs))) {
 			if (typeof v === 'boolean' && false === v) {
 				continue; // Not applicable.
 			}
-			const prefix = '-'.repeat(1 === n.length ? 1 : 2);
-			const escREName = u.escRegExp(prefix + n);
+			const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
+			const escRegExpArgPrefixedName = u.escRegExp(argPrefixedName);
 
-			const argValue = typeof v === 'boolean' ? '' : se.quote(String(v));
-			const argParts = se.quote(prefix + n) + (argValue.length ? ' ' + argValue : '');
+			const quotedArgValues = typeof v === 'boolean' ? ''
+					: v instanceof Array ? se.quoteAll(v.map((v) => String(v))).join(' ')
+					: se.quote(String(v)); // prettier-ignore
 
-			cmd = cmd.replace(new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escREName + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu'), argParts);
-			cmd = cmd.replace(new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escREName + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu'), argValue);
+			const quotedArgParts = se.quote(argPrefixedName) //
+				+ (typeof v === 'boolean' ? '' : ' ' + quotedArgValues); // prettier-ignore
+
+			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpArgPrefixedName + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
+			const regExpArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escRegExpArgPrefixedName + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
+
+			cmd = cmd.replace(regExpArgParts, quotedArgParts);
+			cmd = cmd.replace(regExpArgValues, quotedArgValues);
 		}
-		cmd = cmd.replace(regexAllCMDArgPartsValues, (/* All arguments. Both formats supported for consistency. */) => {
-			const args = []; // Initialize list of arguments.
+		cmd = cmd.replace(this.regexAllCMDArgPartsValues, (/* All arguments. */) => {
+			let args = []; // Initialize list of arguments.
 
 			for (const v of this.cmdArgs._ as Array<string | number>) {
 				args.push(String(v)); // Positional argument.
 			}
-			for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, omitFromNamedCMDArgs))) {
+			for (const [n, v] of Object.entries(_ꓺomit(this.cmdArgs, u.omitFromNamedCMDArgs))) {
 				if (typeof v === 'boolean' && false === v) {
 					continue; // Not applicable.
 				}
-				const prefix = '-'.repeat(1 === n.length ? 1 : 2);
-				const name = prefix + n;
+				const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
 
-				args.push(name); // Named argument.
-				typeof v === 'boolean' ? null : args.push(String(v));
+				const argValues = typeof v === 'boolean' ? []
+					: v instanceof Array ? v.map((v) => String(v))
+					: [String(v)]; // prettier-ignore
+
+				args.push(argPrefixedName);
+				args = args.concat(argValues);
 			}
 			return se.quoteAll(args).join(' ');
 		});
 		// Empty any others remaining; i.e., that were not already filled above.
-		cmd = cmd.replace(regexpRemainingCMDArgParts, '').replace(regexpRemainingCMDArgValues, '');
+		cmd = cmd.replace(this.regexpRemainingCMDArgParts, '').replace(this.regexpRemainingCMDArgValues, '');
 
 		// Finally, compress any superfluous whitespace left behind by replacements.
 		return cmd.replace(/[\t ]+/gu, ' ').trim();
 	}
+
+	/**
+	 * Caches frequently used regular expressions.
+	 */
+	protected regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu'); // Both formats.
+	protected regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
+	protected regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
 }
