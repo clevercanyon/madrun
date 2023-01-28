@@ -53,9 +53,6 @@ const { pkgFile, pkgName, pkgPrivate, pkgRepository, pkgBuildAppType } = (() => 
 
 	return { pkgFile, pkgName, pkgPrivate, pkgRepository, pkgBuildAppType };
 })();
-const { log } = console; // Shorter reference.
-const echo = process.stdout.write.bind(process.stdout);
-
 const Octokit = OctokitCore.plugin(OctokitPluginPaginateRest);
 const octokit = new Octokit({ auth: process.env.USER_GITHUB_TOKEN || '' });
 
@@ -99,11 +96,23 @@ mc.addOperation('$ꓺdefault', (current, defaults) => {
  */
 export default class u {
 	/*
-	 * String utilities.
+	 * StdIO utilities.
 	 */
 
-	static escRegExp(str) {
-		return str.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+	static log(...args) {
+		console.log(...args);
+	}
+
+	static err(...args) {
+		console.err(...args);
+	}
+
+	static echo(...args) {
+		process.stdout.write.bind(process.stdout)(...args);
+	}
+
+	static echoErr(...args) {
+		process.stdout.write.bind(process.stderr)(...args);
 	}
 
 	/*
@@ -113,6 +122,18 @@ export default class u {
 	static async isInteractive() {
 		const isTTY = process.stdout.isTTY || 'true' === process.env.PARENT_IS_TTY ? true : false;
 		return isTTY && process.env.TERM && 'dumb' !== process.env.TERM && 'true' !== process.env.CI && true !== process.env.CI;
+	}
+
+	/*
+	 * String utilities.
+	 */
+
+	static encURI(...args) {
+		return encodeURIComponent(...args);
+	}
+
+	static escRegExp(str) {
+		return str.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 	}
 
 	/**
@@ -138,8 +159,8 @@ export default class u {
 						: 'false',
 			},
 			// Output handlers do not run when `stdio: 'inherit'` or `quiet: true`.
-			stdout: opts.quiet ? null : (buffer) => echo(chalk.white(buffer.toString())),
-			stderr: opts.quiet ? null : (buffer) => echo(chalk.gray(buffer.toString())),
+			stdout: opts.quiet ? null : (buffer) => u.echo(chalk.white(buffer.toString())),
+			stderr: opts.quiet ? null : (buffer) => u.echoErr(chalk.gray(buffer.toString())),
 
 			..._.omit(opts, ['quiet']),
 		});
@@ -422,7 +443,7 @@ export default class u {
 		const pkg = await u.pkg(); // Parses current `./package.json` file.
 
 		if (_.get(pkg, 'config.c10n.&.github.configVersion') === githubConfigVersion) {
-			log(chalk.gray('GitHub repo configuration is up-to-date @v' + githubConfigVersion + '.'));
+			u.log(chalk.gray('GitHub repo configuration is up-to-date @v' + githubConfigVersion + '.'));
 			return; // Repo configuration version is already up-to-date.
 		}
 		if ('main' !== repoData.default_branch) {
@@ -467,7 +488,7 @@ export default class u {
 		const defaultHomepage = 'https://github.com/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo) + '#readme';
 		const defaultDescription = 'Another great project by @' + repoData.owner.login + '.';
 
-		log(chalk.gray('Configuring GitHub repo using org-wide standards.'));
+		u.log(chalk.gray('Configuring GitHub repo using org-wide standards.'));
 		if (!opts.dryRun) {
 			await octokit.request('PATCH /repos/{owner}/{repo}', {
 				owner,
@@ -511,19 +532,19 @@ export default class u {
 			if (labelsToDelete[labelName]) {
 				delete labelsToDelete[labelName]; // Don't delete.
 
-				log(chalk.gray('Updating `' + labelName + '` label in GitHub repo to `#' + labelData.color + '` color.'));
+				u.log(chalk.gray('Updating `' + labelName + '` label in GitHub repo to `#' + labelData.color + '` color.'));
 				if (!opts.dryRun) {
 					await octokit.request('PATCH /repos/{owner}/{repo}/labels/{labelName}', { owner, repo, labelName, ...labelData });
 				}
 			} else {
-				log(chalk.gray('Adding `' + labelName + '` label to GitHub repo with `#' + labelData.color + '` color.'));
+				u.log(chalk.gray('Adding `' + labelName + '` label to GitHub repo with `#' + labelData.color + '` color.'));
 				if (!opts.dryRun) {
 					await octokit.request('POST /repos/{owner}/{repo}/labels', { owner, repo, name: labelName, ...labelData });
 				}
 			}
 		}
 		for (const [labelName, labelData] of Object.entries(labelsToDelete)) {
-			log(chalk.gray('Deleting `' + labelName + '` (unused) label with `#' + labelData.color + '` color from GitHub repo.'));
+			u.log(chalk.gray('Deleting `' + labelName + '` (unused) label with `#' + labelData.color + '` color from GitHub repo.'));
 			if (!opts.dryRun) {
 				await octokit.request('DELETE /repos/{owner}/{repo}/labels/{labelName}', { owner, repo, labelName });
 			}
@@ -532,13 +553,13 @@ export default class u {
 		for (const [team, permission] of Object.entries(teams)) {
 			delete teamsToDelete[team]; // Don't delete.
 
-			log(chalk.gray('Adding `' + team + '` team to GitHub repo with `' + permission + '` permission.'));
+			u.log(chalk.gray('Adding `' + team + '` team to GitHub repo with `' + permission + '` permission.'));
 			if (!opts.dryRun) {
 				await octokit.request('PUT /orgs/{org}/teams/{team}/repos/{owner}/{repo}', { org: owner, owner, repo, team, permission });
 			}
 		}
 		for (const [team, teamData] of Object.entries(teamsToDelete)) {
-			log(chalk.gray('Deleting `' + team + '` (unused) team with `' + teamData.permission + '` permission from GitHub repo.'));
+			u.log(chalk.gray('Deleting `' + team + '` (unused) team with `' + teamData.permission + '` permission from GitHub repo.'));
 			if (!opts.dryRun) {
 				await octokit.request('DELETE /orgs/{org}/teams/{team}/repos/{owner}/{repo}', { org: owner, owner, repo, team });
 			}
@@ -547,7 +568,7 @@ export default class u {
 		for (const branch of ['main'] /* Always protect `main` branch. */) {
 			delete protectedBranchesToDelete[branch]; // Don't delete.
 
-			log(chalk.gray('Protecting `' + branch + '` branch in GitHub repo.'));
+			u.log(chalk.gray('Protecting `' + branch + '` branch in GitHub repo.'));
 			if (!opts.dryRun) {
 				await octokit.request('PUT /repos/{owner}/{repo}/branches/{branch}/protection', {
 					owner,
@@ -583,7 +604,7 @@ export default class u {
 			}
 		}
 		for (const [branch] of Object.entries(protectedBranchesToDelete)) {
-			log(chalk.gray('Deleting `' + branch + '` (unused) branch protection in GitHub repo.'));
+			u.log(chalk.gray('Deleting `' + branch + '` (unused) branch protection in GitHub repo.'));
 			if (!opts.dryRun) {
 				await octokit.request('DELETE /repos/{owner}/{repo}/branches/{branch}/protection', { owner, repo, branch });
 			}
@@ -608,10 +629,10 @@ export default class u {
 		const pkg = await u.pkg(); // Parses current `./package.json` file.
 
 		if (_.get(pkg, 'config.c10n.&.github.envsVersion') === githubEnvsVersion) {
-			log(chalk.gray('GitHub repo environments are up-to-date @v' + githubEnvsVersion + '.'));
+			u.log(chalk.gray('GitHub repo environments are up-to-date @v' + githubEnvsVersion + '.'));
 			return; // Repo environments version is already up-to-date.
 		}
-		log(chalk.gray('Configuring GitHub repo environments using org-wide standards.'));
+		u.log(chalk.gray('Configuring GitHub repo environments using org-wide standards.'));
 
 		const envKeys = await u._envsExtractKeys(); // Dotenv Vault decryption keys.
 		await u._githubEnsureRepoEnvs({ dryRun: opts.dryRun }); // Creates|deletes repo envs.
@@ -630,7 +651,7 @@ export default class u {
 					const sodiumKey = sodium.from_base64(envPublicKey, sodium.base64_variants.ORIGINAL);
 					return sodium.to_base64(sodium.crypto_box_seal(sodium.from_string(envSecretValue), sodiumKey), sodium.base64_variants.ORIGINAL);
 				});
-				log(chalk.gray('Updating `' + envSecretName + '` secret in `' + envName + '` repo env at GitHub.'));
+				u.log(chalk.gray('Updating `' + envSecretName + '` secret in `' + envName + '` repo env at GitHub.'));
 				if (!opts.dryRun) {
 					await octokit.request('PUT /repositories/{repoId}/environments/{envName}/secrets/{envSecretName}', {
 						repoId,
@@ -642,7 +663,7 @@ export default class u {
 				}
 			}
 			for (const [envSecretName] of Object.entries(envSecretsToDelete)) {
-				log(chalk.gray('Deleting `' + envSecretName + '` (unused) secret in `' + envName + '` repo env at GitHub.'));
+				u.log(chalk.gray('Deleting `' + envSecretName + '` (unused) secret in `' + envName + '` repo env at GitHub.'));
 				if (!opts.dryRun) {
 					await octokit.request('DELETE /repositories/{repoId}/environments/{envName}/secrets/{envSecretName}', { repoId, envName, envSecretName });
 				}
@@ -794,9 +815,9 @@ export default class u {
 			delete repoEnvsToDelete[envName]; // Don't delete.
 
 			if (repoEnvs[envName]) {
-				log(chalk.gray('Updating `' + envName + '` repo env at GitHub.'));
+				u.log(chalk.gray('Updating `' + envName + '` repo env at GitHub.'));
 			} else {
-				log(chalk.gray('Creating `' + envName + '` repo env at GitHub.'));
+				u.log(chalk.gray('Creating `' + envName + '` repo env at GitHub.'));
 			}
 			if (!opts.dryRun) {
 				await octokit.request('PUT /repos/{owner}/{repo}/environments/{envName}', {
@@ -815,7 +836,7 @@ export default class u {
 					delete repoEnvBranchPoliciesToDelete[repoEnvBranchPolicyName]; // Don't delete.
 
 					if (!repoEnvBranchPolicies[repoEnvBranchPolicyName]) {
-						log(chalk.gray('Creating `' + repoEnvBranchPolicyName + '` branch policy for `' + envName + '` repo env at GitHub.'));
+						u.log(chalk.gray('Creating `' + repoEnvBranchPolicyName + '` branch policy for `' + envName + '` repo env at GitHub.'));
 						if (!opts.dryRun) {
 							await octokit.request('POST /repos/{owner}/{repo}/environments/{envName}/deployment-branch-policies', {
 								owner,
@@ -827,7 +848,7 @@ export default class u {
 					}
 				}
 				for (const [repoEnvBranchPolicyName, repoEnvBranchPolicy] of Object.entries(repoEnvBranchPoliciesToDelete)) {
-					log(chalk.gray('Deleting `' + repoEnvBranchPolicyName + '` (unused) branch policy for `' + envName + '` repo env at GitHub.'));
+					u.log(chalk.gray('Deleting `' + repoEnvBranchPolicyName + '` (unused) branch policy for `' + envName + '` repo env at GitHub.'));
 					if (!opts.dryRun) {
 						await octokit.request('DELETE /repos/{owner}/{repo}/environments/{envName}/deployment-branch-policies/{branchPolicyId}', {
 							owner,
@@ -840,7 +861,7 @@ export default class u {
 			}
 		}
 		for (const [envName] of Object.entries(repoEnvsToDelete)) {
-			log(chalk.gray('Deleting `' + envName + '` (unused) repo env at GitHub.'));
+			u.log(chalk.gray('Deleting `' + envName + '` (unused) repo env at GitHub.'));
 			if (!opts.dryRun) {
 				await octokit.request('DELETE /repos/{owner}/{repo}/environments/{envName}', { owner, repo, envName });
 			}
@@ -858,20 +879,20 @@ export default class u {
 	static async envsPush(opts = { dryRun: false }) {
 		for (const [envName, envFile] of Object.entries(envFiles)) {
 			if (!fs.existsSync(envFile)) {
-				log(chalk.gray('Creating file for `' + envName + '` env.'));
+				u.log(chalk.gray('Creating file for `' + envName + '` env.'));
 				if (!opts.dryRun) {
 					await fsp.mkdir(path.dirname(envFile), { recursive: true });
 					await fsp.writeFile(envFile, '# ' + envName);
 				}
 			}
-			log(chalk.gray('Pushing `' + envName + '` env to Dotenv Vault.'));
+			u.log(chalk.gray('Pushing `' + envName + '` env to Dotenv Vault.'));
 			if (!opts.dryRun) {
 				await u.spawn('npx', ['dotenv-vault', 'push', envName, envFile, '--yes']);
 			}
 		}
 		await u.envsCompile({ dryRun: opts.dryRun });
 
-		log(chalk.gray('Encrypting all envs using latest Dotenv Vault data.'));
+		u.log(chalk.gray('Encrypting all envs using latest Dotenv Vault data.'));
 		if (!opts.dryRun) {
 			await u.spawn('npx', ['dotenv-vault', 'build', '--yes']);
 		}
@@ -882,7 +903,7 @@ export default class u {
 
 	static async envsPull(opts = { dryRun: false }) {
 		for (const [envName, envFile] of Object.entries(envFiles)) {
-			log(chalk.gray('Pulling `' + envName + '` env from Dotenv Vault.'));
+			u.log(chalk.gray('Pulling `' + envName + '` env from Dotenv Vault.'));
 			if (!opts.dryRun) {
 				await fsp.mkdir(path.dirname(envFile), { recursive: true });
 				await u.spawn('npx', ['dotenv-vault', 'pull', envName, envFile, '--yes']);
@@ -896,7 +917,7 @@ export default class u {
 	}
 
 	static async envsCompile(opts = { dryRun: false }) {
-		log(chalk.gray('Compiling all Dotenv Vault envs; i.e., generating JSON files.'));
+		u.log(chalk.gray('Compiling all Dotenv Vault envs; i.e., generating JSON files.'));
 		if (!opts.dryRun) {
 			const mainEnv = dotenv.parse(envFiles.main);
 
@@ -914,14 +935,14 @@ export default class u {
 	}
 
 	static async envsKeys(opts = { dryRun: false }) {
-		log(chalk.gray('Getting all Dotenv Vault keys.'));
+		u.log(chalk.gray('Getting all Dotenv Vault keys.'));
 		if (!opts.dryRun) {
 			await u.spawn('npx', ['dotenv-vault', 'keys', '--yes']);
 		}
 	}
 
 	static async envsEncrypt(opts = { dryRun: false }) {
-		log(chalk.gray('Building Dotenv Vault; i.e., encrypting all envs.'));
+		u.log(chalk.gray('Building Dotenv Vault; i.e., encrypting all envs.'));
 		if (!opts.dryRun) {
 			await u.spawn('npx', ['dotenv-vault', 'build', '--yes']);
 		}
@@ -935,7 +956,7 @@ export default class u {
 			if (!envName || !envFile) {
 				throw new Error('u.envsDecrypt: Invalid Dotenv Vault decryption key: `' + key + '`.');
 			}
-			log(chalk.gray('Decrypting `' + envName + '` env using Dotenv Vault key.'));
+			u.log(chalk.gray('Decrypting `' + envName + '` env using Dotenv Vault key.'));
 			if (!opts.dryRun) {
 				const origDotenvKey = process.env.DOTENV_KEY || '';
 				process.env.DOTENV_KEY = key; // For `dotEnvVaultCore`.
@@ -992,7 +1013,7 @@ export default class u {
 	static async _envsExtractKeys() {
 		const keys = {}; // Initialize.
 
-		log(chalk.gray('Extracting all Dotenv Vault keys.'));
+		u.log(chalk.gray('Extracting all Dotenv Vault keys.'));
 		const output = await u.spawn('npx', ['dotenv-vault', 'keys', '--yes'], { quiet: true });
 
 		let _m = null; // Initialize.
@@ -1122,10 +1143,10 @@ export default class u {
 		const pkg = await u.pkg(); // Parses current `./package.json` file.
 
 		if (_.get(pkg, 'config.c10n.&.npmjs.configVersions') === githubConfigVersion + ',' + npmjsConfigVersion) {
-			log(chalk.gray('npmjs package configuration is up-to-date @v' + githubConfigVersion + ' @v' + npmjsConfigVersion + '.'));
+			u.log(chalk.gray('npmjs package configuration is up-to-date @v' + githubConfigVersion + ' @v' + npmjsConfigVersion + '.'));
 			return; // Package configuration version is already up-to-date.
 		}
-		log(chalk.gray('Configuring npmjs package using org-wide standards.'));
+		u.log(chalk.gray('Configuring npmjs package using org-wide standards.'));
 
 		const teamsToDelete = await u._npmjsOrgTeams(org); // Current list of organization’s teams.
 		const alwaysOnRequiredTeams = { developers: 'read-write', owners: 'read-write', 'security-managers': 'read-only' }; // No exceptions.
@@ -1136,13 +1157,13 @@ export default class u {
 		for (const [team, permission] of Object.entries(teams)) {
 			delete teamsToDelete[team]; // Don't delete.
 
-			log(chalk.gray('Adding `' + team + '` team to npmjs package with `' + permission + '` permission.'));
+			u.log(chalk.gray('Adding `' + team + '` team to npmjs package with `' + permission + '` permission.'));
 			if (!opts.dryRun) {
 				await u.spawn('npm', ['access', 'grant', permission, org + ':' + team], { quiet: true });
 			}
 		}
 		for (const [team] of Object.entries(teamsToDelete)) {
-			log(chalk.gray('Deleting `' + team + '` (unused) from npmjs package.'));
+			u.log(chalk.gray('Deleting `' + team + '` (unused) from npmjs package.'));
 			if (!opts.dryRun) {
 				await u.spawn('npm', ['access', 'revoke', org + ':' + team], { quiet: true }).catch(() => null);
 			}

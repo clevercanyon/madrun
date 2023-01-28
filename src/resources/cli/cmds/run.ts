@@ -32,12 +32,15 @@ export interface CtxUtils {
 
 	log: typeof u.log;
 	err: typeof u.err;
+
 	echo: typeof u.echo;
+	echoErr: typeof u.echoErr;
 
 	exec: typeof u.exec;
 	spawn: typeof u.spawn;
 
 	findUp: typeof findUp;
+	findUpSync: typeof findUpSync;
 	configFiles: typeof u.configFiles;
 }
 
@@ -171,23 +174,26 @@ export default class Run {
 
 			log: u.log, // Logs to stdout.
 			err: u.err, // Logs to stderr.
+
 			echo: u.echo, // Echoes to stdout.
+			echoErr: u.echoErr, // Echoes to stderr.
 
 			exec: u.exec, // Exec CMD utility.
 			spawn: u.spawn, // Spawn CMD utility.
 
-			findUp: findUp, // findUp config file utility.
+			findUp, // findUp config file utility.
+			findUpSync, // findUp config file utility (sync).
 			configFiles: u.configFiles, // `.madrun.*` config files.
 		};
 		if (this.args.madrunDebug) {
-			u.log(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
-			u.log(chalk.black('> configFile:') + ' ' + chalk.gray(this.configFile));
-			u.log(chalk.black('> args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
-			u.log(chalk.black('> ---'));
+			u.err(chalk.black('> cwd:') + ' ' + chalk.gray(this.cwd));
+			u.err(chalk.black('> configFile:') + ' ' + chalk.gray(this.configFile));
+			u.err(chalk.black('> args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
+			u.err(chalk.black('> ---'));
 
-			u.log(chalk.black('> cmdName:') + ' ' + chalk.gray(this.cmdName));
-			u.log(chalk.black('> cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
-			u.log(chalk.black('> ---'));
+			u.err(chalk.black('> cmdName:') + ' ' + chalk.gray(this.cmdName));
+			u.err(chalk.black('> cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
+			u.err(chalk.black('> ---'));
 		}
 	}
 
@@ -201,10 +207,10 @@ export default class Run {
 		for (const cmdData of cmdConfigData.cmds) {
 			if (typeof cmdData.cmd === 'function') {
 				if (this.args.madrunDebug) {
-					u.log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					u.log(chalk.black('> rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					u.log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					u.log(chalk.black('> ---'));
+					u.err(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					u.err(chalk.black('> rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
+					u.err(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					u.err(chalk.black('> ---'));
 				}
 				await cmdData.cmd(this.cmdArgs, { ...this.ctxUtils, env: cmdData.env, opts: cmdData.opts });
 			} else {
@@ -212,11 +218,11 @@ export default class Run {
 				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
 				if (this.args.madrunDebug) {
-					u.log(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					u.log(chalk.black('> rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
-					u.log(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					u.log(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
-					u.log(chalk.black('> ---'));
+					u.err(chalk.black('> rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					u.err(chalk.black('> rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
+					u.err(chalk.black('> rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					u.err(chalk.black('> cmd:') + ' ' + chalk.gray(cmd));
+					u.err(chalk.black('> ---'));
 				}
 				await u.exec(cmd, { cwd: this.cwd, ...cmdData.opts });
 			}
@@ -238,8 +244,8 @@ export default class Run {
 		const canInstallClean = fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile);
 
 		if (this.args.madrunDebug) {
-			u.log(chalk.black('> Auto-installing NPM package dependencies.'));
-			u.log(chalk.black('> ---'));
+			u.err(chalk.black('> Auto-installing NPM package dependencies.'));
+			u.err(chalk.black('> ---'));
 		}
 		await u.spawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
 	}

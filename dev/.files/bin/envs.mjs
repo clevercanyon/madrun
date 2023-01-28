@@ -24,8 +24,6 @@ u.propagateUserEnvVars(); // i.e., `USER_` env vars.
 const __dirname = dirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
 
-const { log } = console; // Shorter reference.
-
 const envFiles = {
 	main: path.resolve(projDir, './dev/.envs/.env'),
 	dev: path.resolve(projDir, './dev/.envs/.env.dev'),
@@ -59,7 +57,7 @@ class Install {
 			await this.install();
 		}
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -71,13 +69,13 @@ class Install {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Installing all new Dotenv Vault envs.'));
+		u.log(chalk.green('Installing all new Dotenv Vault envs.'));
 
 		/**
 		 * Deletes old files so a new install can begin.
 		 */
 
-		log(chalk.gray('Deleting any existing `.env.me`, `.env.vault` files.'));
+		u.log(chalk.gray('Deleting any existing `.env.me`, `.env.vault` files.'));
 		if (!this.args.dryRun) {
 			await fsp.rm(path.resolve(projDir, './.env.me'), { force: true });
 			await fsp.rm(path.resolve(projDir, './.env.vault'), { force: true });
@@ -87,7 +85,7 @@ class Install {
 		 * Logs the current user into Dotenv Vault.
 		 */
 
-		log(chalk.gray('Creating all new Dotenv Vault envs, which requires login.'));
+		u.log(chalk.gray('Creating all new Dotenv Vault envs, which requires login.'));
 		if (!this.args.dryRun) {
 			await u.spawn('npx', ['dotenv-vault', 'new', '--yes']);
 			await u.spawn('npx', ['dotenv-vault', 'login', '--yes']);
@@ -98,21 +96,21 @@ class Install {
 		 * Pushes all envs to Dotenv Vault.
 		 */
 
-		log(chalk.gray('Pushing all envs to Dotenv Vault.'));
+		u.log(chalk.gray('Pushing all envs to Dotenv Vault.'));
 		await u.envsPush({ dryRun: this.args.dryRun });
 
 		/**
 		 * Encrypts all Dotenv Vault envs.
 		 */
 
-		log(chalk.gray('Building; i.e., encrypting, all Dotenv Vault envs.'));
+		u.log(chalk.gray('Building; i.e., encrypting, all Dotenv Vault envs.'));
 		await u.envsEncrypt({ dryRun: this.args.dryRun });
 
 		/**
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Installation of new Dotenv Vault envs complete.'));
+		u.log(await u.finale('Success', 'Installation of new Dotenv Vault envs complete.'));
 	}
 
 	/**
@@ -123,7 +121,7 @@ class Install {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Installing all Dotenv Vault envs.'));
+		u.log(chalk.green('Installing all Dotenv Vault envs.'));
 
 		/**
 		 * Checks if project is an envs vault.
@@ -138,7 +136,7 @@ class Install {
 		 */
 
 		if (!fs.existsSync(path.resolve(projDir, './.env.me'))) {
-			log(chalk.gray('Installing all Dotenv Vault envs, which requires login.'));
+			u.log(chalk.gray('Installing all Dotenv Vault envs, which requires login.'));
 			if (!this.args.dryRun) {
 				await u.spawn('npx', ['dotenv-vault', 'login', '--yes']);
 
@@ -153,7 +151,7 @@ class Install {
 		 */
 
 		if (this.args.pull || !fs.existsSync(envFiles.main)) {
-			log(chalk.gray('Pulling all envs from Dotenv Vault.'));
+			u.log(chalk.gray('Pulling all envs from Dotenv Vault.'));
 			await u.envsPull({ dryRun: this.args.dryRun });
 		}
 
@@ -161,7 +159,7 @@ class Install {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Installation of Dotenv Vault envs complete.'));
+		u.log(await u.finale('Success', 'Installation of Dotenv Vault envs complete.'));
 	}
 }
 
@@ -183,7 +181,7 @@ class Push {
 		await this.push();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -195,7 +193,7 @@ class Push {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Pushing all envs to Dotenv Vault.'));
+		u.log(chalk.green('Pushing all envs to Dotenv Vault.'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -215,7 +213,7 @@ class Push {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Dotenv Vault pushing complete.'));
+		u.log(await u.finale('Success', 'Dotenv Vault pushing complete.'));
 	}
 }
 
@@ -237,7 +235,7 @@ class Pull {
 		await this.pull();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -249,7 +247,7 @@ class Pull {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Pulling all envs from Dotenv Vault.'));
+		u.log(chalk.green('Pulling all envs from Dotenv Vault.'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -269,7 +267,7 @@ class Pull {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Dotenv Vault pulling complete.'));
+		u.log(await u.finale('Success', 'Dotenv Vault pulling complete.'));
 	}
 }
 
@@ -291,7 +289,7 @@ class Compile {
 		await this.compile();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -303,7 +301,7 @@ class Compile {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Compiling all Dotenv Vault envs.'));
+		u.log(chalk.green('Compiling all Dotenv Vault envs.'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -323,7 +321,7 @@ class Compile {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Dotenv Vault compilation complete.'));
+		u.log(await u.finale('Success', 'Dotenv Vault compilation complete.'));
 	}
 }
 
@@ -345,7 +343,7 @@ class Keys {
 		await this.keys();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -357,7 +355,7 @@ class Keys {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Retrieving Dotenv Vault keys for all envs.'));
+		u.log(chalk.green('Retrieving Dotenv Vault keys for all envs.'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -377,7 +375,7 @@ class Keys {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Copy Dotenv Vault env keys from list above.'));
+		u.log(await u.finale('Success', 'Copy Dotenv Vault env keys from list above.'));
 	}
 }
 
@@ -399,7 +397,7 @@ class Encrypt {
 		await this.encrypt();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -411,7 +409,7 @@ class Encrypt {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Building; i.e., encrypting all Dotenv Vault envs.'));
+		u.log(chalk.green('Building; i.e., encrypting all Dotenv Vault envs.'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -431,7 +429,7 @@ class Encrypt {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Dotenv Vault encryption complete.'));
+		u.log(await u.finale('Success', 'Dotenv Vault encryption complete.'));
 	}
 }
 
@@ -453,7 +451,7 @@ class Decrypt {
 		await this.decrypt();
 
 		if (this.args.dryRun) {
-			log(chalk.cyanBright('Dry run. This was all a simulation.'));
+			u.log(chalk.cyanBright('Dry run. This was all a simulation.'));
 		}
 	}
 
@@ -465,7 +463,7 @@ class Decrypt {
 		 * Displays preamble.
 		 */
 
-		log(chalk.green('Decrypting Dotenv Vault env(s).'));
+		u.log(chalk.green('Decrypting Dotenv Vault env(s).'));
 
 		/**
 		 * Checks if project has a Dotenv Vault.
@@ -485,7 +483,7 @@ class Decrypt {
 		 * Signals completion with success.
 		 */
 
-		log(await u.finale('Success', 'Dotenv Vault decryption complete.'));
+		u.log(await u.finale('Success', 'Dotenv Vault decryption complete.'));
 	}
 }
 
@@ -718,8 +716,8 @@ void (async () => {
 			},
 		})
 		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') log(chalk.gray(error.stack));
-			log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
+			if (error?.stack && typeof error.stack === 'string') u.log(chalk.gray(error.stack));
+			u.log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
 		.parse();

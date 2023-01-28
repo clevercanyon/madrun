@@ -11,8 +11,6 @@ import * as u from './resources/cli/utilities.js';
 
 u.propagateUserEnvVars(); // i.e., `USER_` env vars.
 
-const { error: err } = console; // Shorter reference.
-
 declare const $$__APP_PKG_VERSION__$$: string;
 
 /**
@@ -58,8 +56,8 @@ void (async () => {
 			},
 		})
 		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') err(chalk.gray(error.stack));
-			err(await u.error('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
+			if (error?.stack && typeof error.stack === 'string') u.err(chalk.gray(error.stack));
+			u.err(await u.error('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 			process.exit(1);
 		})
 		.parse();

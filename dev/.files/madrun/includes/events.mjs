@@ -13,29 +13,52 @@ import fsp from 'node:fs/promises';
 import { dirname } from 'desm';
 import path from 'node:path';
 
+import u from '../../bin/includes/utilities.mjs';
+
 const __dirname = dirname(import.meta.url);
-const projDir = path.resolve(__dirname, '../../..');
+const projDir = path.resolve(__dirname, '../../../..');
 
 export default {
 	'on::madrun:default:new': [
+		/**
+		 * Installs new project.
+		 */
 		'npx @clevercanyon/madrun install project',
+
+		/**
+		 * Configures new project.
+		 */
 		async (args) => {
-			let u = './dev/.files/bin/includes/utilities.mjs';
-			u = (await import(path.resolve(projDir, u))).default;
+			/**
+			 * Propagates `USER_` env vars.
+			 */
 
 			u.propagateUserEnvVars(); // i.e., `USER_` env vars.
+
+			/**
+			 * Deletes Dotenv Vault associated with template.
+			 */
 
 			await fsp.rm(path.resolve(projDir, './.env.me'), { force: true });
 			await fsp.rm(path.resolve(projDir, './.env.vault'), { force: true });
 
-			const projSlug = path.basename(projDir);
-			const projParentDirBasename = path.basename(path.dirname(projDir));
+			/**
+			 * Initializes a few variables.
+			 */
+
+			const dirBasename = path.basename(projDir);
+			const parentDir = path.dirname(projDir); // One level up.
+			const parentDirBasename = path.basename(parentDir);
+
+			/**
+			 * Updates `./package.json` in new project directory.
+			 */
 
 			await u.updatePkg({
-				name: '@clevercanyon/' + projSlug,
-				repository: 'https://github.com/clevercanyon/' + projSlug,
-				homepage: 'https://github.com/clevercanyon/' + projSlug + '#readme',
-				bugs: 'https://github.com/clevercanyon/' + projSlug + '/issues',
+				name: args.pkgName || '@' + parentDirBasename + '/' + dirBasename,
+				repository: 'https://github.com/' + u.encURI(parentDirBasename) + '/' + u.encURI(dirBasename),
+				homepage: 'https://github.com/' + u.encURI(parentDirBasename) + '/' + u.encURI(dirBasename) + '#readme',
+				bugs: 'https://github.com/' + u.encURI(parentDirBasename) + '/' + u.encURI(dirBasename) + '/issues',
 
 				$unset: /* Effectively resets these to default values. */ [
 					'private', //
@@ -61,28 +84,59 @@ export default {
 				...(args.pkg ? { $set: { private: false } } : {}),
 				...(args.pkg && args.public ? { $set: { 'publishConfig.access': 'public' } } : {}),
 			});
+
+			/**
+			 * Updates `./README.md` file in new project directory.
+			 */
+
 			const readmeFile = path.resolve(projDir, './README.md');
 			let readme = fs.readFileSync(readmeFile).toString(); // Markdown.
 
-			readme = readme.replace(/@clevercanyon\/[^/?#\s]+/gu, '@clevercanyon/' + projSlug);
-			await fsp.writeFile(readmeFile, readme);
+			readme = readme.replace(/@clevercanyon\/[^/?#\s]+/gu, args.pkgName || '@' + parentDirBasename + '/' + dirBasename);
+			await fsp.writeFile(readmeFile, readme); // Updates `./README.md` file.
 
-			await u.spawn('git', ['init']); // Initialize a brand new git repository.
+			/**
+			 * Initializes this as a new git repository.
+			 */
+			await u.spawn('git', ['init']);
 
-			if ('clevercanyon' === projParentDirBasename) {
+			/**
+			 * Updates Vite build after the above changes.
+			 */
+
+			if (await u.isViteBuild()) await u.viteBuild();
+
+			/**
+			 * Saves changes made here as first initial commit.
+			 */
+
+			await u.gitAddCommit('Initializing project directory. [n]');
+
+			/**
+			 * Attempts to create a remote repository origin at GitHub; if at all possible.
+			 */
+
+			if ('clevercanyon' === parentDirBasename) {
 				if (process.env.GH_TOKEN && 'owner' === (await u.gistGetC10NUser()).github?.role) {
-					await u.spawn('gh', ['repo', 'create', 'clevercanyon/' + projSlug, '--source=.', args.public ? '--public' : '--private']);
+					await u.spawn('gh', ['repo', 'create', parentDirBasename + '/' + dirBasename, '--source=.', args.public ? '--public' : '--private'], { stdio: 'inherit' });
 				} else {
-					await u.spawn('git', ['remote', 'add', 'origin', 'https://github.com/clevercanyon/' + projSlug + '.git']);
+					const origin = 'https://github.com/' + u.encURI(parentDirBasename) + '/' + u.encURI(dirBasename) + '.git';
+					await u.spawn('git', ['remote', 'add', 'origin', origin], { stdio: 'inherit' });
 				}
-			} else if (process.env.USER_GITHUB_USERNAME) {
+			} else if (process.env.USER_GITHUB_USERNAME === parentDirBasename) {
 				if (process.env.GH_TOKEN) {
-					await u.spawn('gh', ['repo', 'create', process.env.USER_GITHUB_USERNAME + '/' + projSlug, '--source=.', args.public ? '--public' : '--private']);
-					//
+					await u.spawn('gh', ['repo', 'create', parentDirBasename + '/' + dirBasename, '--source=.', args.public ? '--public' : '--private'], { stdio: 'inherit' });
 				} else {
-					await u.spawn('git', ['remote', 'add', 'origin', 'https://github.com/clevercanyon/' + projSlug + '.git']);
+					const origin = 'https://github.com/' + u.encURI(parentDirBasename) + '/' + u.encURI(dirBasename) + '.git';
+					await u.spawn('git', ['remote', 'add', 'origin', origin], { stdio: 'inherit' });
 				}
 			}
+
+			/**
+			 * Signals completion with success.
+			 */
+
+			u.log(await u.finale('Success', 'New project ready.'));
 		},
 	],
 };

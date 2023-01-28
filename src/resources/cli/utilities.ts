@@ -28,6 +28,11 @@ export const err = console.error;
 export const echo = process.stdout.write.bind(process.stdout);
 
 /**
+ * Echoes output to stderr.
+ */
+export const echoErr = process.stdout.write.bind(process.stderr);
+
+/**
  * `$ madrun` config file names.
  */
 export const configFiles = ['.madrun.json', '.madrun.js', '.madrun.cjs', '.madrun.mjs'];
@@ -102,7 +107,7 @@ export const spawn = async (cmd: string, args: string[] = [], opts: { [x: string
 		},
 		// Output handlers do not run when `stdio: 'inherit'` or `quiet: true`.
 		stdout: opts.quiet ? null : (buffer: Buffer) => echo(chalk.white(buffer.toString())),
-		stderr: opts.quiet ? null : (buffer: Buffer) => echo(chalk.gray(buffer.toString())),
+		stderr: opts.quiet ? null : (buffer: Buffer) => echoErr(chalk.gray(buffer.toString())),
 
 		..._ꓺomit(opts, ['quiet']),
 	});

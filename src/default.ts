@@ -9,7 +9,7 @@ import fsp from 'node:fs/promises';
 import yArgs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import * as u from './resources/cli/utilities.js';
+import { error as uꓺerror } from './resources/cli/utilities.js';
 import type { CMDFnArgs, CMDFnCtxUtils } from './resources/cli/cmds/run.js';
 
 declare const $$__APP_PKG_VERSION__$$: string;
@@ -19,7 +19,7 @@ export default {
 	 * Starts a new project.
 	 */
 	'new': [
-		async (args: CMDFnArgs, ctx: CMDFnCtxUtils): Promise<void> => {
+		async (args: CMDFnArgs, u: CMDFnCtxUtils): Promise<void> => {
 			const yargs = yArgs(hideBin(process.argv));
 			await yargs
 				.scriptName('madrun')
@@ -117,7 +117,7 @@ export default {
 						 * Initializes a few variables.
 						 */
 
-						const dir = path.resolve(ctx.cwd, String(args.dir));
+						const dir = path.resolve(u.cwd, String(args.dir));
 						const parentDir = path.dirname(dir); // One level up from new directory location.
 						const parentDirBasename = path.basename(parentDir); // e.g., `clevercanyon`.
 
@@ -148,26 +148,26 @@ export default {
 						 * Clones remote git repo and then deletes hidden `.git` directory.
 						 */
 
-						await ctx.spawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1']);
+						await u.spawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1']);
 						await fsp.rm(path.resolve(dir, './.git'), { recursive: true, force: true });
 
 						/**
 						 * Fires an event if new directory contains a `.madrun.*` config file.
 						 */
 
-						if (await ctx.findUp(ctx.configFiles, { cwd: dir, stopAt: dir })) {
+						if (await u.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
 							const argsToEventHandler = [
 								...(args.pkg ? ['--pkg'] : []),
 								...(args.pkgName ? ['--pkgName', String(args.pkgName)] : []),
 								...(args.public ? ['--public'] : []),
 							];
-							await ctx.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
+							await u.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
 						}
 					},
 				})
 				.fail(async (message, error /* , yargs */) => {
-					if (error?.stack && typeof error.stack === 'string') ctx.err(ctx.chalk.gray(error.stack));
-					ctx.err(await u.error('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
+					if (error?.stack && typeof error.stack === 'string') u.err(u.chalk.gray(error.stack));
+					u.err(await uꓺerror('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
 					process.exit(1);
 				})
 				.parse();
