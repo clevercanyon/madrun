@@ -18,6 +18,9 @@ import u from '../../bin/includes/utilities.mjs';
 const __dirname = dirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../../..');
 
+/**
+ * `$ madrun on::` event handlers.
+ */
 export default {
 	'on::madrun:default:new': [
 		/**

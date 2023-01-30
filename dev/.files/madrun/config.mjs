@@ -10,6 +10,9 @@
 
 import events from './includes/events.mjs';
 
+/**
+ * `$ madrun` commands.
+ */
 export default {
 	'envs': './dev/.files/bin/envs.mjs {{@}}',
 	'install': './dev/.files/bin/install.mjs {{@}}',

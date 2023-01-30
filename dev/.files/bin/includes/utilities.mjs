@@ -39,7 +39,7 @@ import { paginateRest as OctokitPluginPaginateRest } from '@octokit/plugin-pagin
 import sodium from 'libsodium-wrappers'; // Used to encrypt GitHub secret values.
 
 const __dirname = dirname(import.meta.url);
-const binDir = path.resolve(__dirname, '..');
+const binDir = path.resolve(__dirname, '..' );
 const projDir = path.resolve(__dirname, '../../../..');
 
 const { pkgFile, pkgName, pkgPrivate, pkgRepository, pkgBuildAppType } = (() => {
