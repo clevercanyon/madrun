@@ -120,7 +120,7 @@ const yargsꓺdefaultOpts: yargsꓺOpts = {
  */
 export const yargs = async (opts: yargsꓺOpts = yargsꓺdefaultOpts): Promise<Yargs> => {
 	let newYargs: Yargs; // Initialize.
-	opts = Object.assign({}, opts, yargsꓺdefaultOpts);
+	opts = Object.assign({}, yargsꓺdefaultOpts, opts);
 
 	if (opts.bracketedArrays) {
 		newYargs = await yArgsꓺwithBracketedArrays();
