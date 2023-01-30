@@ -1,6 +1,6 @@
 # `$ madrun install`
 
-<small>Underlying bin script: `./dev/.files/bin/install.js`</small>
+<small>Underlying bin script: `./dev/.files/bin/install.mjs`</small>
 
 ## Interactive Installs
 

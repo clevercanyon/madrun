@@ -13,24 +13,12 @@ import path from 'node:path';
 import { dirname } from 'desm';
 import fsp from 'node:fs/promises';
 
-import yArgs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
 import chalk from 'chalk';
 import u from './includes/utilities.mjs';
-
-u.propagateUserEnvVars(); // i.e., `USER_` env vars.
 
 const __dirname = dirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
 
-const envFiles = {
-	main: path.resolve(projDir, './dev/.envs/.env'),
-	dev: path.resolve(projDir, './dev/.envs/.env.dev'),
-	ci: path.resolve(projDir, './dev/.envs/.env.ci'),
-	stage: path.resolve(projDir, './dev/.envs/.env.stage'),
-	prod: path.resolve(projDir, './dev/.envs/.env.prod'),
-};
 /**
  * NOTE: Most of these commands _must_ be performed interactively. Please review the Yargs configuration below for
  * further details. At this time, only the `decrypt` command is allowed noninteractively, and _only_ noninteractively.
@@ -110,7 +98,7 @@ class Install {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Installation of new Dotenv Vault envs complete.'));
+		u.log(await u.finaleBox('Success', 'Installation of new Dotenv Vault envs complete.'));
 	}
 
 	/**
@@ -150,7 +138,7 @@ class Install {
 		 * Pulls all envs from Dotenv Vault.
 		 */
 
-		if (this.args.pull || !fs.existsSync(envFiles.main)) {
+		if (this.args.pull || !fs.existsSync((await u.envFiles()).main)) {
 			u.log(chalk.gray('Pulling all envs from Dotenv Vault.'));
 			await u.envsPull({ dryRun: this.args.dryRun });
 		}
@@ -159,7 +147,7 @@ class Install {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Installation of Dotenv Vault envs complete.'));
+		u.log(await u.finaleBox('Success', 'Installation of Dotenv Vault envs complete.'));
 	}
 }
 
@@ -213,7 +201,7 @@ class Push {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Dotenv Vault pushing complete.'));
+		u.log(await u.finaleBox('Success', 'Dotenv Vault pushing complete.'));
 	}
 }
 
@@ -267,7 +255,7 @@ class Pull {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Dotenv Vault pulling complete.'));
+		u.log(await u.finaleBox('Success', 'Dotenv Vault pulling complete.'));
 	}
 }
 
@@ -321,7 +309,7 @@ class Compile {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Dotenv Vault compilation complete.'));
+		u.log(await u.finaleBox('Success', 'Dotenv Vault compilation complete.'));
 	}
 }
 
@@ -375,7 +363,7 @@ class Keys {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Copy Dotenv Vault env keys from list above.'));
+		u.log(await u.finaleBox('Success', 'Copy Dotenv Vault env keys from list above.'));
 	}
 }
 
@@ -429,7 +417,7 @@ class Encrypt {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Dotenv Vault encryption complete.'));
+		u.log(await u.finaleBox('Success', 'Dotenv Vault encryption complete.'));
 	}
 }
 
@@ -483,29 +471,17 @@ class Decrypt {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Dotenv Vault decryption complete.'));
+		u.log(await u.finaleBox('Success', 'Dotenv Vault decryption complete.'));
 	}
 }
 
 /**
- * Yargs CLI config. ⛵🏴‍☠
- *
- * @see http://yargs.js.org/docs/
+ * Yargs ⛵🏴‍☠.
  */
 void (async () => {
-	const yargs = yArgs(hideBin(process.argv));
+	await u.propagateUserEnvVars(); // i.e., `USER_` env vars.
+	const yargs = await u.yargs({ scriptName: 'madrun envs' });
 	await yargs
-		.scriptName('madrun envs')
-		.parserConfiguration({
-			'dot-notation': false,
-			'strip-aliased': true,
-			'strip-dashed': true,
-			'greedy-arrays': true,
-			'boolean-negation': false,
-		})
-		.strict() // No arbitrary commands/options.
-		.wrap(Math.max(80, yargs.terminalWidth() / 2))
-
 		.command({
 			command: 'install',
 			describe: 'Installs all envs for Dotenv Vault.',
@@ -695,6 +671,7 @@ void (async () => {
 							demandOption: true,
 							default: [],
 							description: 'To decrypt `.env.vault` env(s).',
+							alias: ['keys[]', 'keys[', 'key', 'key[]', 'key['],
 						},
 						dryRun: {
 							type: 'boolean',
@@ -714,11 +691,6 @@ void (async () => {
 			handler: async (args) => {
 				await new Decrypt(args).run();
 			},
-		})
-		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') u.log(chalk.gray(error.stack));
-			u.log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
-			process.exit(1);
 		})
 		.parse();
 })();

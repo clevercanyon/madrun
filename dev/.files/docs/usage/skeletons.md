@@ -4,19 +4,19 @@ To start a new project with one of our skeletons, simply run:
 
 ```bash
 $ cd ~/Projects/clevercanyon
-$ madrun new ./my-new-project-dir --from clevercanyon/skeleton
+$ madrun new ./my-new-project --from clevercanyon/skeleton
 # Installs dependencies, envs, and builds your new project based on template.
 ```
 
 -   Change `clevercanyon/skeleton` to [any other skeleton project](https://github.com/orgs/clevercanyon/repositories?q=skeleton) you'd like to start from.
--   Change `./my-new-project-dir` to the directory you'd like your new project to live in.
+-   Change `./my-new-project` to the directory you'd like your new project to live in.
     -   The name of this directory is important, as it may also be used for automatic git repository creation and default `./package.json` properties defined by our skeletons. Best to think of this as a repository name; i.e., set the directory basename to the slug you'd like your project to have on GitHub; e.g., `$ madrun new cool-plugin`.
 -   For additional recommended options, see: `$ madrun new --help`
 
 ## Next Steps
 
 ```bash
-$ cd ~/Projects/clevercanyon/my-new-project-dir
+$ cd ~/Projects/clevercanyon/my-new-project
 $ madrun envs install --new # Interactively sets up new envs in Dotenv Vault.
 ```
 

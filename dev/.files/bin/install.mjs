@@ -12,13 +12,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dirname } from 'desm';
 
-import yArgs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
 import chalk from 'chalk';
 import u from './includes/utilities.mjs';
-
-u.propagateUserEnvVars(); // i.e., `USER_` env vars.
 
 const __dirname = dirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
@@ -108,29 +103,17 @@ class Project {
 		 * Signals completion with success.
 		 */
 
-		u.log(await u.finale('Success', 'Project install complete.'));
+		u.log(await u.finaleBox('Success', 'Project install complete.'));
 	}
 }
 
 /**
- * Yargs CLI config. ⛵🏴‍☠
- *
- * @see http://yargs.js.org/docs/
+ * Yargs ⛵🏴‍☠.
  */
 void (async () => {
-	const yargs = yArgs(hideBin(process.argv));
+	await u.propagateUserEnvVars(); // i.e., `USER_` env vars.
+	const yargs = await u.yargs({ scriptName: 'madrun install' });
 	await yargs
-		.scriptName('madrun install')
-		.parserConfiguration({
-			'dot-notation': false,
-			'strip-aliased': true,
-			'strip-dashed': true,
-			'greedy-arrays': true,
-			'boolean-negation': false,
-		})
-		.strict() // No arbitrary commands/options.
-		.wrap(Math.max(80, yargs.terminalWidth() / 2))
-
 		.command({
 			command: ['project'],
 			describe: 'Installs NPM packages, envs, and builds distro.',
@@ -160,11 +143,6 @@ void (async () => {
 			handler: async (args) => {
 				await new Project(args).run();
 			},
-		})
-		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') u.log(chalk.gray(error.stack));
-			u.log(await u.error('Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
-			process.exit(1);
 		})
 		.parse();
 })();
