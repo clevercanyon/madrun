@@ -13,7 +13,7 @@ import spawnPlease from 'spawn-please';
 import { execSync } from 'node:child_process';
 
 import yArgs from 'yargs';
-import { hideBin as yargsꓺhideBin } from 'yargs/helpers';
+import { hideBin as yArgsꓺhideBin } from 'yargs/helpers';
 import type { Argv as Yargs, Arguments as yargsꓺArgs } from 'yargs';
 
 declare const $$__APP_PKG_VERSION__$$: string;
@@ -125,7 +125,7 @@ export const yargs = async (opts: yargsꓺOpts = yargsꓺdefaultOpts): Promise<Y
 	if (opts.bracketedArrays) {
 		newYargs = await yArgsꓺwithBracketedArrays();
 	} else {
-		newYargs = yArgs(yargsꓺhideBin(process.argv));
+		newYargs = yArgs(yArgsꓺhideBin(process.argv));
 	}
 	if (opts.scriptName) {
 		newYargs.scriptName(opts.scriptName);
@@ -159,7 +159,7 @@ export const yargs = async (opts: yargsꓺOpts = yargsꓺdefaultOpts): Promise<Y
  */
 const yArgsꓺwithBracketedArrays = async (): Promise<Yargs> => {
 	const bracketedArrayArgNames: string[] = [];
-	const newYargsArgs = yargsꓺhideBin(process.argv);
+	const newYargsArgs = yArgsꓺhideBin(process.argv);
 
 	for (const arg of newYargsArgs) {
 		let m: null | string[] = null;
