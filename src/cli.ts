@@ -2,40 +2,19 @@
  * CLI.
  */
 
-import chalk from 'chalk';
-import yArgs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
 import Run from './resources/cli/cmds/run.js';
 import * as u from './resources/cli/utilities.js';
 
-u.propagateUserEnvVars(); // i.e., `USER_` env vars.
-
-declare const $$__APP_PKG_VERSION__$$: string;
-
 /**
- * Yargs CLI config. ⛵🏴‍☠
- *
- * @see http://yargs.js.org/docs/
+ * Yargs ⛵🏴‍☠.
  */
 void (async () => {
-	const yargs = yArgs(hideBin(process.argv));
+	await u.propagateUserEnvVars(); // i.e., `USER_` env vars.
+	const yargs = await u.yargs({ strict: false, scriptName: 'madrun', errorBoxName: 'madrun', helpOption: 'madrunHelp', versionOption: 'madrunVersion' });
 	await yargs
-		.scriptName('madrun')
-		.parserConfiguration({
-			'dot-notation': false,
-			'strip-aliased': true,
-			'strip-dashed': true,
-			'greedy-arrays': true,
-			'boolean-negation': false,
-		})
-		.help('madrunHelp') // Version passed explicitly.
-		.version('madrunVersion', $$__APP_PKG_VERSION__$$)
-		.wrap(Math.max(80, yargs.terminalWidth() / 2))
-
 		.command({
 			command: ['$0'],
-			describe: 'Runs one or more commands configured by a mad JS file; in sequence.',
+			describe: 'Runs commands, shell scripts, or JS functions configured by a `' + u.configFilesGlob + '` file.',
 			builder: (yargs) => {
 				return yargs
 					.options({
@@ -54,11 +33,6 @@ void (async () => {
 			handler: async (args) => {
 				await new Run(args).run();
 			},
-		})
-		.fail(async (message, error /* , yargs */) => {
-			if (error?.stack && typeof error.stack === 'string') u.err(chalk.gray(error.stack));
-			u.err(await u.error('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
-			process.exit(1);
 		})
 		.parse();
 })();

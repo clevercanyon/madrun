@@ -6,33 +6,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
 
-import yArgs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
-import { error as uꓺerror } from './resources/cli/utilities.js';
-import type { CMDFnArgs, CMDFnCtxUtils } from './resources/cli/cmds/run.js';
-
-declare const $$__APP_PKG_VERSION__$$: string;
+import type { CMDArgs, CtxUtils } from './resources/cli/cmds/run.js';
 
 export default {
 	/**
 	 * Starts a new project.
 	 */
 	'new': [
-		async (args: CMDFnArgs, u: CMDFnCtxUtils): Promise<void> => {
-			const yargs = yArgs(hideBin(process.argv));
+		async (args: CMDArgs, u: CtxUtils): Promise<void> => {
+			/**
+			 * Yargs ⛵🏴‍☠ within a default CMD.
+			 */
+			const yargs = await u.yargs({ strict: false, scriptName: 'madrun', errorBoxName: 'madrun' });
 			await yargs
-				.scriptName('madrun')
-				.parserConfiguration({
-					'dot-notation': false,
-					'strip-aliased': true,
-					'strip-dashed': true,
-					'greedy-arrays': true,
-					'boolean-negation': false,
-				})
-				.version('version', $$__APP_PKG_VERSION__$$)
-				.wrap(Math.max(80, yargs.terminalWidth() / 2))
-
 				.command({
 					command: ['new <dir> [template]'],
 					describe: 'Starts a new project using an existing GitHub repo as a template.',
@@ -139,8 +125,8 @@ export default {
 						const branch = String(args.branch || 'main');
 						let repoURL = String(args.from || args.template || '{{parentDirBasename}}/skeleton');
 
-						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, parentDirBasename);
-						if (repoURL.indexOf('/') === -1) repoURL = parentDirBasename + '/' + repoURL;
+						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, u.encURI(parentDirBasename));
+						if (repoURL.indexOf('/') === -1) repoURL = u.encURI(parentDirBasename) + '/' + repoURL;
 						if (repoURL.indexOf('//') === -1) repoURL = 'https://github.com/' + repoURL;
 						if (!repoURL.endsWith('.git')) repoURL += '.git';
 
@@ -164,11 +150,6 @@ export default {
 							await u.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
 						}
 					},
-				})
-				.fail(async (message, error /* , yargs */) => {
-					if (error?.stack && typeof error.stack === 'string') u.err(u.chalk.gray(error.stack));
-					u.err(await uꓺerror('madrun: Problem', error ? error.toString() : message || 'Unexpected unknown errror.'));
-					process.exit(1);
 				})
 				.parse();
 		},

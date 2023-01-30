@@ -33,7 +33,7 @@ export default {
 			 * Propagates `USER_` env vars.
 			 */
 
-			u.propagateUserEnvVars(); // i.e., `USER_` env vars.
+			await u.propagateUserEnvVars(); // i.e., `USER_` env vars.
 
 			/**
 			 * Deletes Dotenv Vault associated with template.
