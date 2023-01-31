@@ -22,6 +22,10 @@ const path = require('node:path');
 
 const projDir = path.resolve(__dirname, '../../..');
 const pkgFile = path.resolve(projDir, './package.json');
+
+if (!fs.existsSync(pkgFile)) {
+	throw new Error('eslint/config.cjs: Missing `./package.json`.');
+}
 const pkg = JSON.parse(fs.readFileSync(pkgFile).toString());
 
 const allJSExtns = ['.js', '.jsx', '.cjs', '.cjsx', '.json', '.node', '.mjs', '.mjsx'];
