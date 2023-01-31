@@ -1,19 +1,30 @@
 /**
- * CLI.
+ * CLI handler.
  */
 
 import Run from './resources/cli/cmds/run.js';
+
 import * as u from './resources/cli/utilities.js';
+import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
+
+import type { Args } from './resources/cli/utilities.js';
 
 /**
  * Yargs ⛵🏴‍☠.
  */
 void (async () => {
-	await u.propagateUserEnvVars(); // i.e., `USER_` env vars.
-	const yargs = await u.yargs({ strict: false, scriptName: 'madrun', errorBoxName: 'madrun', helpOption: 'madrunHelp', versionOption: 'madrunVersion' });
-	await yargs
+	await (
+		await $yargsꓺcli({
+			strict: false,
+			scriptName: 'madrun',
+			errorBoxName: 'madrun',
+			helpOption: 'madrunHelp',
+			versionOption: 'madrunVersion',
+			version: u.version,
+		})
+	)
 		.command({
-			command: ['$0'],
+			command: ['$0'], // Default and only well-defined CMD here.
 			describe: 'Runs commands, shell scripts, or JS functions configured by a `' + u.configFilesGlob + '` file.',
 			builder: (yargs) => {
 				return yargs
@@ -31,7 +42,8 @@ void (async () => {
 					});
 			},
 			handler: async (args) => {
-				await new Run(args).run();
+				await u.propagateUserEnvVars();
+				await new Run(args as Args).run();
 			},
 		})
 		.parse();

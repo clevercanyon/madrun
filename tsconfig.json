@@ -17,7 +17,7 @@
 
 	"compilerOptions": {
 		"lib": ["es2021"],
-		"types": ["vite/client", "@types/node", "@types/yargs"]
+		"types": ["vite/client", "@types/node"]
 	}
 	/* </custom:end> */
 }

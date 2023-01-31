@@ -1,32 +1,35 @@
 #!/usr/bin/env node
 /**
- * CLI.
+ * Run command.
  */
-
-import _ꓺomit from 'lodash/omit.js';
-import * as u from '../utilities.js';
-
-import chalk from 'chalk';
-import * as se from 'shescape';
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { findUp, findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 
-import type { Arguments as yargsꓺArgs } from 'yargs';
+import chalk from 'chalk';
+import _ꓺomit from 'lodash/omit.js';
+
+import * as u from '../utilities.js';
+import type { Args, CMDArgs } from '../utilities.js';
+
+import { escRegExp as $strꓺescRegExp } from '@clevercanyon/utilities/str';
+import { exec as $cmdꓺexec, spawn as $cmdꓺspawn, quote as $cmdꓺquote, quoteAll as $cmdꓺquoteAll } from '@clevercanyon/utilities.node/cmd';
 
 /**
  * Types/interfaces.
  */
-
-export type Args = yargsꓺArgs<{ madrunHelp: boolean; madrunVersion: boolean; madrunDebug: boolean }>;
-export type CMDArgs = Omit<Args, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
 
 export interface Env {
 	[x: string]: unknown;
 }
 export interface Opts {
 	[x: string]: unknown;
+}
+export interface Ctx {
+	cwd: string;
+	env: Env;
+	opts: Opts;
 }
 export type CMDs =
 	| string
@@ -42,35 +45,6 @@ export type CMDs =
 					opts?: Opts;
 			  }
 	  >;
-export interface CtxUtils {
-	cwd: string;
-	env: Env;
-	opts: Opts;
-
-	se: typeof se;
-	chalk: typeof chalk;
-	yargs: typeof u.yargs;
-
-	log: typeof u.log;
-	logError: typeof u.logError;
-	logDebug: typeof u.logDebug;
-
-	echo: typeof u.echo;
-	echoError: typeof u.echoError;
-	echoDebug: typeof u.echoDebug;
-
-	encURI: typeof u.encURI;
-	escRegExp: typeof u.escRegExp;
-
-	exec: typeof u.exec;
-	spawn: typeof u.spawn;
-
-	findUp: typeof findUp;
-	findUpSync: typeof findUpSync;
-
-	configFiles: typeof u.configFiles;
-	configFilesGlob: typeof u.configFilesGlob;
-}
 
 export interface Config {
 	[x: string]:
@@ -84,12 +58,12 @@ export interface Config {
 				cmds: CMDs;
 		  };
 }
-export type CMDConfigFn = (cmdArgs: CMDArgs, ctxUtils: CtxUtils) => Promise<CMDConfigFnRtns>;
-export type CMDConfigFnSync = (cmdArgs: CMDArgs, ctxUtils: CtxUtils) => CMDConfigFnRtns;
+export type CMDConfigFn = (cmdArgs: CMDArgs, ctxUtils: Ctx) => Promise<CMDConfigFnRtns>;
+export type CMDConfigFnSync = (cmdArgs: CMDArgs, ctxUtils: Ctx) => CMDConfigFnRtns;
 export type CMDConfigFnRtns = string | CMDFn | CMDFnSync | Array<string | CMDFn | CMDFnSync> | { env?: Env; opts?: Opts; cmds: CMDs };
 
-export type CMDFn = (cmdArgs: CMDArgs, ctxUtils: CtxUtils) => Promise<void>;
-export type CMDFnSync = (cmdArgs: CMDArgs, ctxUtils: CtxUtils) => void;
+export type CMDFn = (cmdArgs: CMDArgs, ctxUtils: Ctx) => Promise<void>;
+export type CMDFnSync = (cmdArgs: CMDArgs, ctxUtils: Ctx) => void;
 
 export interface CMDConfigData {
 	env: Env;
@@ -108,7 +82,7 @@ export default class Run {
 	/**
 	 * Yargs args.
 	 */
-	protected args: yargsꓺArgs;
+	protected args: Args;
 
 	/**
 	 * Called CMD name.
@@ -131,14 +105,14 @@ export default class Run {
 	protected cwd: string;
 
 	/**
-	 * Context/utilities.
+	 * Contextual data.
 	 */
-	protected ctxUtils: CtxUtils;
+	protected ctx: Ctx;
 
 	/**
 	 * Constructor.
 	 */
-	public constructor(args: yargsꓺArgs) {
+	public constructor(args: Args) {
 		this.args = args;
 
 		this.cmdName = String(args._?.[0] || '');
@@ -149,52 +123,29 @@ export default class Run {
 		if ('' === this.cmdName) {
 			throw new Error('Missing command name.');
 		}
-		this.configFile = findUpSync(u.configFiles) as string;
+		const foundConfigFile = findUpSync(u.configFiles);
 
-		if (this.configFile) {
+		if (foundConfigFile) {
+			this.configFile = foundConfigFile;
 			this.cwd = path.dirname(this.configFile);
 		} else {
 			this.cwd = process.cwd();
 			this.configFile = 'default';
 		}
-		this.ctxUtils = {
+		this.ctx = {
 			cwd: this.cwd, // CWD.
-			env: {}, // Filled for CMDs.
-			opts: {}, // Filled for CMDs.
-
-			se, // Shell escape|quote utility.
-			chalk, // Chalk string colorizer.
-			yargs: u.yargs, // Yargs generator.
-
-			log: u.log, // Logs to stdout.
-			logError: u.logError, // Logs to stderr.
-			logDebug: u.logDebug, // Logs to stdout.
-
-			echo: u.echo, // Echoes to stdout.
-			echoError: u.echoError, // Echoes to stderr.
-			echoDebug: u.echoDebug, // Echoes to stdout.
-
-			encURI: u.encURI, // Encodes a URI component string.
-			escRegExp: u.escRegExp, // Escapes string for regexp.
-
-			exec: u.exec, // Exec CMD utility.
-			spawn: u.spawn, // Spawn CMD utility.
-
-			findUp, // findUp config file utility.
-			findUpSync, // findUp config file utility (sync).
-
-			configFiles: u.configFiles, // `.madrun.*` config files array.
-			configFilesGlob: u.configFilesGlob, // `.madrun.*` config files glob.
+			env: {}, // Populated for CMDs.
+			opts: {}, // Populated for CMDs.
 		};
 		if (this.args.madrunDebug) {
-			u.logDebug(chalk.black('cwd:') + ' ' + chalk.gray(this.cwd));
-			u.logDebug(chalk.black('args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
-			u.logDebug(chalk.black('configFile:') + ' ' + chalk.gray(this.configFile));
-			u.logDebug(chalk.black('---'));
+			console.debug(chalk.black('cwd:') + ' ' + chalk.gray(this.cwd));
+			console.debug(chalk.black('args:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
+			console.debug(chalk.black('configFile:') + ' ' + chalk.gray(this.configFile));
+			console.debug(chalk.black('---'));
 
-			u.logDebug(chalk.black('cmdName:') + ' ' + chalk.gray(this.cmdName));
-			u.logDebug(chalk.black('cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
-			u.logDebug(chalk.black('---'));
+			console.debug(chalk.black('cmdName:') + ' ' + chalk.gray(this.cmdName));
+			console.debug(chalk.black('cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.cmdArgs, null, 4)));
+			console.debug(chalk.black('---'));
 		}
 	}
 
@@ -211,25 +162,25 @@ export default class Run {
 				await this.propagateCMD(cmdData.env);
 
 				if (this.args.madrunDebug) {
-					u.logDebug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					u.logDebug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					u.logDebug(chalk.black('rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					u.logDebug(chalk.black('cmd:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					u.logDebug(chalk.black('---'));
+					console.debug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					console.debug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					console.debug(chalk.black('rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
+					console.debug(chalk.black('cmd:') + ' ' + chalk.gray('[function]')); // Function CMD.
+					console.debug(chalk.black('---'));
 				}
-				await cmdData.cmd(this.cmdArgs, { ...this.ctxUtils, env: cmdData.env, opts: cmdData.opts });
+				await cmdData.cmd(this.cmdArgs, { ...this.ctx, env: cmdData.env, opts: cmdData.opts });
 			} else {
 				// Populates env vars & replacement codes in given CMD.
 				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
 				if (this.args.madrunDebug) {
-					u.logDebug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					u.logDebug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					u.logDebug(chalk.black('rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
-					u.logDebug(chalk.black('cmd:') + ' ' + chalk.gray(cmd));
-					u.logDebug(chalk.black('---'));
+					console.debug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					console.debug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					console.debug(chalk.black('rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
+					console.debug(chalk.black('cmd:') + ' ' + chalk.gray(cmd));
+					console.debug(chalk.black('---'));
 				}
-				await u.exec(cmd, { cwd: this.cwd, ...cmdData.opts });
+				await $cmdꓺexec(cmd, { cwd: this.cwd, ...cmdData.opts });
 			}
 		}
 	}
@@ -249,10 +200,10 @@ export default class Run {
 		const canInstallClean = fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile);
 
 		if (this.args.madrunDebug) {
-			u.logDebug(chalk.black('Auto-installing NPM package dependencies.'));
-			u.logDebug(chalk.black('---'));
+			console.debug(chalk.black('Auto-installing NPM package dependencies.'));
+			console.debug(chalk.black('---'));
 		}
-		await u.spawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
+		await $cmdꓺspawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
 	}
 
 	/**
@@ -333,7 +284,7 @@ export default class Run {
 		} else if (null === configFn) {
 			throw new Error('`' + this.cmdName + '` command is unavailable.');
 		}
-		let configFnRtn = await configFn(this.cmdArgs, this.ctxUtils);
+		let configFnRtn = await configFn(this.cmdArgs, this.ctx);
 
 		configFnRtn = configFnRtn instanceof Array ? { cmds: configFnRtn } : configFnRtn;
 		configFnRtn = typeof configFnRtn === 'function' ? { cmds: [configFnRtn] } : configFnRtn;
@@ -429,7 +380,7 @@ export default class Run {
 			if (v.startsWith('"') && v.endsWith('"')) {
 				return v; // Quoted already.
 			}
-			return se.quote(v);
+			return $cmdꓺquote(v);
 		};
 		for (const [name, value] of Object.entries(env)) {
 			vars += ' export ' + name + '=' + maybeQuote(String(value)) + ';';
@@ -447,8 +398,8 @@ export default class Run {
 	protected async populateCMDReplacementCodes(cmd: string): Promise<string> {
 		(this.cmdArgs._ as Array<string | number>).forEach((v, i) => {
 			const position = String(i + 1);
-			const escRegExpPosition = u.escRegExp(position);
-			const quotedArgValue = se.quote(String(v));
+			const escRegExpPosition = $strꓺescRegExp(position);
+			const quotedArgValue = $cmdꓺquote(String(v));
 
 			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
 			const regExpArgValue = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
@@ -461,14 +412,14 @@ export default class Run {
 				continue; // Not applicable.
 			}
 			const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
-			const escRegExpArgPrefixedName = u.escRegExp(argPrefixedName);
+			const escRegExpArgPrefixedName = $strꓺescRegExp(argPrefixedName);
 
 			const quotedArgValues = typeof v === 'boolean' ? ''
-					: v instanceof Array && n.endsWith('[') ? se.quoteAll(v.concat(']').map((v) => String(v))).join(' ')
-					: v instanceof Array ? se.quoteAll(v.map((v) => String(v))).join(' ')
-					: se.quote(String(v)); // prettier-ignore
+					: v instanceof Array && n.endsWith('[') ? $cmdꓺquoteAll(v.concat(']').map((v) => String(v))).join(' ')
+					: v instanceof Array ? $cmdꓺquoteAll(v.map((v) => String(v))).join(' ')
+					: $cmdꓺquote(String(v)); // prettier-ignore
 
-			const quotedArgParts = se.quote(argPrefixedName) //
+			const quotedArgParts = $cmdꓺquote(argPrefixedName) //
 				+ (typeof v === 'boolean' ? '' : ' ' + quotedArgValues); // prettier-ignore
 
 			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpArgPrefixedName + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
@@ -497,7 +448,7 @@ export default class Run {
 				args.push(argPrefixedName);
 				args = args.concat(argValues);
 			}
-			return se.quoteAll(args).join(' ');
+			return $cmdꓺquoteAll(args).join(' ');
 		});
 		// Empty any others remaining; i.e., that were not already filled above.
 		cmd = cmd.replace(this.regexpRemainingCMDArgParts, '').replace(this.regexpRemainingCMDArgValues, '');

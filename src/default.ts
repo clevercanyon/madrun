@@ -6,19 +6,33 @@ import fs from 'node:fs';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
 
-import type { CMDArgs, CtxUtils } from './resources/cli/cmds/run.js';
+import { findUp } from 'find-up';
+import * as u from './resources/cli/utilities.js';
+
+import { encode as $urlꓺencode } from '@clevercanyon/utilities/url';
+import { spawn as $cmdꓺspawn } from '@clevercanyon/utilities.node/cmd';
+import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
+
+import type { CMDArgs } from './resources/cli/utilities.js';
+import type { Ctx } from './resources/cli/cmds/run.js';
 
 export default {
 	/**
 	 * Starts a new project.
 	 */
 	'new': [
-		async (args: CMDArgs, u: CtxUtils): Promise<void> => {
+		async (args: CMDArgs, ctx: Ctx): Promise<void> => {
 			/**
-			 * Yargs ⛵🏴‍☠ within a default CMD.
+			 * Yargs within a CMD ⛵🏴‍☠.
 			 */
-			const yargs = await u.yargs({ strict: false, scriptName: 'madrun', errorBoxName: 'madrun' });
-			await yargs
+			await (
+				await $yargsꓺcli({
+					strict: false,
+					scriptName: 'madrun',
+					errorBoxName: 'madrun',
+					version: u.version,
+				})
+			)
 				.command({
 					command: ['new <dir> [template]'],
 					describe: 'Starts a new project using an existing GitHub repo as a template.',
@@ -103,7 +117,7 @@ export default {
 						 * Initializes a few variables.
 						 */
 
-						const dir = path.resolve(u.cwd, String(args.dir));
+						const dir = path.resolve(ctx.cwd, String(args.dir));
 						const parentDir = path.dirname(dir); // One level up from new directory location.
 						const parentDirBasename = path.basename(parentDir); // e.g., `clevercanyon`.
 
@@ -125,8 +139,8 @@ export default {
 						const branch = String(args.branch || 'main');
 						let repoURL = String(args.from || args.template || '{{parentDirBasename}}/skeleton');
 
-						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, u.encURI(parentDirBasename));
-						if (repoURL.indexOf('/') === -1) repoURL = u.encURI(parentDirBasename) + '/' + repoURL;
+						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $urlꓺencode(parentDirBasename));
+						if (repoURL.indexOf('/') === -1) repoURL = $urlꓺencode(parentDirBasename) + '/' + repoURL;
 						if (repoURL.indexOf('//') === -1) repoURL = 'https://github.com/' + repoURL;
 						if (!repoURL.endsWith('.git')) repoURL += '.git';
 
@@ -134,20 +148,20 @@ export default {
 						 * Clones remote git repo and then deletes hidden `.git` directory.
 						 */
 
-						await u.spawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1']);
+						await $cmdꓺspawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1'], { cwd: ctx.cwd });
 						await fsp.rm(path.resolve(dir, './.git'), { recursive: true, force: true });
 
 						/**
 						 * Fires an event if new directory contains a `.madrun.*` config file.
 						 */
 
-						if (await u.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
+						if (await findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
 							const argsToEventHandler = [
 								...(args.pkg ? ['--pkg'] : []),
 								...(args.pkgName ? ['--pkgName', String(args.pkgName)] : []),
 								...(args.public ? ['--public'] : []),
 							];
-							await u.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
+							await $cmdꓺspawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
 						}
 					},
 				})
