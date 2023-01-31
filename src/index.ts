@@ -1,5 +1,5 @@
 /**
- * Library.
+ * Module.
  */
 
 export {};
