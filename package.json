@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "1.0.50",
+	"version": "1.0.51",
 	"license": "GPL-3.0-or-later",
 	"name": "@clevercanyon/madrun",
 	"description": "Runs commands, shell scripts, or JS functions configured by a `.madrun.{json,js,cjs,mjs}` file.",
@@ -11,14 +11,18 @@
 	"homepage": "https://github.com/clevercanyon/madrun#readme",
 	"bugs": "https://github.com/clevercanyon/madrun/issues",
 	"funding": "https://github.com/sponsors/clevercanyon",
-	"keywords": ["clevercanyon"],
+	"keywords": [
+		"clevercanyon"
+	],
 	"author": {
 		"name": "Clever Canyon",
 		"url": "https://clevercanyon.com"
 	},
 	"contributors": [],
 	"type": "module",
-	"files": ["/dist"],
+	"files": [
+		"/dist"
+	],
 	"bin": {
 		"madrun": "./dist/bin/cli.js"
 	},
@@ -40,7 +44,9 @@
 			"types": "./dist/types/default.d.ts"
 		}
 	},
-	"sideEffects": ["./src/*.{html,scss,ts,tsx}"],
+	"sideEffects": [
+		"./src/*.{html,scss,ts,tsx}"
+	],
 	"module": "./dist/index.js",
 	"main": "./dist/index.cjs",
 	"browser": "",
@@ -48,7 +54,9 @@
 	"types": "./dist/types/index.d.ts",
 	"typesVersions": {
 		">=3.1": {
-			"./*": ["./dist/types/*"]
+			"./*": [
+				"./dist/types/*"
+			]
 		}
 	},
 	"dependencies": {
@@ -68,8 +76,14 @@
 	},
 	"overrides": {},
 	"workspaces": [],
-	"cpu": ["x64", "arm64"],
-	"os": ["darwin", "linux"],
+	"cpu": [
+		"x64",
+		"arm64"
+	],
+	"os": [
+		"darwin",
+		"linux"
+	],
 	"engines": {
 		"node": "^19.2.0 || ^19.4.0",
 		"npm": "^8.19.3 || ^9.2.0"
