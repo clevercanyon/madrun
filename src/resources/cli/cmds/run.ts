@@ -9,6 +9,7 @@ import { findUpSync } from 'find-up';
 
 import chalk from 'chalk';
 import _ꓺomit from 'lodash/omit.js';
+import _ꓺisPlainObject from 'lodash/isPlainObject.js';
 
 import * as u from '../utilities.js';
 import type { AllArgs as uꓺAllArgs, Args as uꓺArgs } from '../utilities.js';
@@ -290,7 +291,7 @@ export default class Run {
 		} else if (null === config /* Cannot be null otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
-		if (typeof config !== 'object' && typeof config !== 'function') {
+		if (!_ꓺisPlainObject(config) && typeof config !== 'function') {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
 		return config;
@@ -310,7 +311,7 @@ export default class Run {
 		if (null === config /* Cannot be null otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
-		if (typeof config === 'object') {
+		if (typeof config === 'object' && _ꓺisPlainObject(config)) {
 			const configObj = config; // Object pointer.
 			config = async (): Promise<ConfigFnRtns> => configObj;
 		}
@@ -366,11 +367,11 @@ export default class Run {
 			const cmdConfigStr = cmdConfig; // String pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigStr;
 			//
-		} else if (cmdConfig instanceof Array) {
+		} else if (Array.isArray(cmdConfig)) {
 			const cmdConfigArr = cmdConfig; // Array pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigArr;
 			//
-		} else if (typeof cmdConfig === 'object') {
+		} else if (_ꓺisPlainObject(cmdConfig)) {
 			const cmdConfigObj = cmdConfig; // Object pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigObj;
 		}
@@ -401,10 +402,10 @@ export default class Run {
 		let cmdConfigData = await cmdConfigFn({ cmd: this.cmd, args: this.args, ctx: this.ctx });
 
 		cmdConfigData = typeof cmdConfigData === 'string' ? { cmds: '' === cmdConfigData ? [] : [cmdConfigData] } : cmdConfigData;
-		cmdConfigData = cmdConfigData instanceof Array /* Array object. */ ? { cmds: cmdConfigData } : cmdConfigData;
+		cmdConfigData = Array.isArray(cmdConfigData) ? { cmds: cmdConfigData } : cmdConfigData;
 		cmdConfigData = typeof cmdConfigData === 'function' ? { cmds: [cmdConfigData] } : cmdConfigData;
 
-		if (null === cmdConfigData || typeof cmdConfigData !== 'object') {
+		if (!_ꓺisPlainObject(cmdConfigData)) {
 			throw new Error('`' + this.cmd + '` command config has an invalid data type.');
 		}
 		cmdConfigData = Object.assign({ env: {}, opts: {}, cmds: [] }, cmdConfigData);
@@ -412,15 +413,15 @@ export default class Run {
 
 		cmdConfigData.cmds = typeof cmdConfigData.cmds === 'string' ? ('' === cmdConfigData.cmds ? [] : [cmdConfigData.cmds]) : cmdConfigData.cmds;
 		cmdConfigData.cmds = typeof cmdConfigData.cmds === 'function' ? [cmdConfigData.cmds] : cmdConfigData.cmds;
-		cmdConfigData.cmds = typeof cmdConfigData.cmds === 'object' ? [cmdConfigData.cmds as CMDSingleConfigObj] : cmdConfigData.cmds;
+		cmdConfigData.cmds = _ꓺisPlainObject(cmdConfigData.cmds) ? [cmdConfigData.cmds as CMDSingleConfigObj] : cmdConfigData.cmds;
 
-		if (null === cmdConfigData.env || typeof cmdConfigData.env !== 'object') {
+		if (!_ꓺisPlainObject(cmdConfigData.env)) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `env` property.');
 		}
-		if (null === cmdConfigData.opts || typeof cmdConfigData.opts !== 'object') {
+		if (!_ꓺisPlainObject(cmdConfigData.opts)) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `opts` property.');
 		}
-		if (null === cmdConfigData.cmds || !(cmdConfigData.cmds instanceof Array) || !cmdConfigData.cmds.length) {
+		if (!Array.isArray(cmdConfigData.cmds) || !cmdConfigData.cmds.length) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `cmds` property.');
 		}
 		for (let i = 0; i < cmdConfigData.cmds.length; i++) {
@@ -429,19 +430,19 @@ export default class Run {
 			cmdData = typeof cmdData === 'string' ? { cmd: cmdData } : cmdData;
 			cmdData = typeof cmdData === 'function' ? { cmd: cmdData } : cmdData;
 
-			if (null === cmdData || typeof cmdData !== 'object') {
+			if (!_ꓺisPlainObject(cmdData)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with an invalid data type.');
 			}
 			cmdData = Object.assign({ env: { ...cmdConfigData.env }, opts: { ...cmdConfigData.opts }, cmd: '' }, cmdData);
 			(cmdData.env = cmdData.env || {}), (cmdData.opts = cmdData.opts || {});
 
-			if (null === cmdData.env || typeof cmdData.env !== 'object') {
+			if (!_ꓺisPlainObject(cmdData.env)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `env` property.');
 			}
-			if (null === cmdData.opts || typeof cmdData.opts !== 'object') {
+			if (!_ꓺisPlainObject(cmdData.opts)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `opts` property.');
 			}
-			if ((typeof cmdData.cmd !== 'string' && typeof cmdData.cmd !== 'function') || !cmdData.cmd) {
+			if (!cmdData.cmd || (typeof cmdData.cmd !== 'string' && typeof cmdData.cmd !== 'function')) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `cmd` property.');
 			}
 			cmdConfigData.cmds[i] = cmdData; // Update.
@@ -527,8 +528,8 @@ export default class Run {
 			const escRegExpArgPrefixedName = $strꓺescRegExp(argPrefixedName);
 
 			const quotedArgValues = typeof v === 'boolean' ? ''
-					: v instanceof Array && n.endsWith('[') ? $cmdꓺquoteAll(v.concat(']').map((v) => String(v))).join(' ')
-					: v instanceof Array ? $cmdꓺquoteAll(v.map((v) => String(v))).join(' ')
+					: Array.isArray(v) && n.endsWith('[') ? $cmdꓺquoteAll(v.concat(']').map((v) => String(v))).join(' ')
+					: Array.isArray(v) ? $cmdꓺquoteAll(v.map((v) => String(v))).join(' ')
 					: $cmdꓺquote(String(v)); // prettier-ignore
 
 			const quotedArgParts = $cmdꓺquote(argPrefixedName) //
@@ -553,8 +554,8 @@ export default class Run {
 				const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
 
 				const argValues = typeof v === 'boolean' ? []
-					: v instanceof Array && n.endsWith('[')  ? v.concat(']').map((v) => String(v))
-					: v instanceof Array ? v.map((v) => String(v))
+					: Array.isArray(v) && n.endsWith('[')  ? v.concat(']').map((v) => String(v))
+					: Array.isArray(v) ? v.map((v) => String(v))
 					: [String(v)]; // prettier-ignore
 
 				args.push(argPrefixedName);
