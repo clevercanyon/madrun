@@ -7,7 +7,7 @@ import Run from './resources/cli/cmds/run.js';
 import * as u from './resources/cli/utilities.js';
 import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
 
-import type { Args } from './resources/cli/utilities.js';
+import type { AllArgs } from './resources/cli/utilities.js';
 
 /**
  * Yargs ⛵🏴‍☠.
@@ -43,7 +43,7 @@ void (async () => {
 			},
 			handler: async (args) => {
 				await u.propagateUserEnvVars();
-				await new Run(args as Args).run();
+				await new Run(args as AllArgs).run();
 			},
 		})
 		.parse();

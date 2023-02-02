@@ -13,17 +13,16 @@ import { encode as $urlꓺencode } from '@clevercanyon/utilities/url';
 import { spawn as $cmdꓺspawn } from '@clevercanyon/utilities.node/cmd';
 import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
 
-import type { CMDArgs } from './resources/cli/utilities.js';
-import type { Ctx } from './resources/cli/cmds/run.js';
+import type { Props } from './resources/cli/cmds/run.js';
 
 export default {
 	/**
 	 * Starts a new project.
 	 */
 	'new': [
-		async (args: CMDArgs, ctx: Ctx): Promise<void> => {
+		async ({ ctx }: Props): Promise<void> => {
 			/**
-			 * Yargs within a CMD ⛵🏴‍☠.
+			 * Yargs ⛵🏴‍☠.
 			 */
 			await (
 				await $yargsꓺcli({

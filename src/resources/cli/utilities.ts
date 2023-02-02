@@ -20,9 +20,9 @@ export const configFiles = ['.madrun.json', '.madrun.js', '.madrun.cjs', '.madru
 /**
  * Argument types and utilities.
  */
-export type Args = $yargsꓺArgs<{ madrunHelp: boolean; madrunVersion: boolean; madrunDebug: boolean }>;
-export type CMDArgs = Omit<Args, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
-export const omitFromNamedCMDArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'madrunDebug'];
+export type AllArgs = $yargsꓺArgs<{ madrunHelp: boolean; madrunVersion: boolean; madrunDebug: boolean }>;
+export type Args = Omit<AllArgs, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
+export const omitFromNamedArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'madrunDebug'];
 
 /**
  * Propagates user environment variables.
