@@ -19,9 +19,9 @@ export default async (/* {cmd, args, ctx} */) => {
 		'install': './dev/.files/bin/install.mjs {{@}}',
 		'update': './dev/.files/bin/update.mjs {{@}}',
 
-		'dev': async (args) => 'npx vite dev' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'preview': async (args) => 'npx vite preview' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'build': async (args) => 'npx vite build' + (args.mode ? '' : ' --mode=prod') + ' {{@}}',
+		'dev': async ({ args }) => 'npx vite dev' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+		'preview': async ({ args }) => 'npx vite preview' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+		'build': async ({ args }) => 'npx vite build' + (args.mode ? '' : ' --mode=prod') + ' {{@}}',
 		'wrangler': 'CLOUDFLARE_API_TOKEN="${USER_CLOUDFLARE_TOKEN:-}" npx wrangler {{@}}',
 
 		...events, // e.g., `on::madrun:default:new`.
