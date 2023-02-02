@@ -9,6 +9,7 @@ import fsp from 'node:fs/promises';
 import { findUp } from 'find-up';
 import * as u from './resources/cli/utilities.js';
 
+import { get as $brandꓺget } from '@clevercanyon/utilities/brand';
 import { encode as $urlꓺencode } from '@clevercanyon/utilities/url';
 import { spawn as $cmdꓺspawn } from '@clevercanyon/utilities.node/cmd';
 import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
@@ -118,7 +119,10 @@ export default {
 
 						const dir = path.resolve(ctx.cwd, String(args.dir));
 						const parentDir = path.dirname(dir); // One level up from new directory location.
-						const parentDirBasename = path.basename(parentDir); // e.g., `clevercanyon`.
+						const parentDirBasename = path.basename(parentDir); // e.g., `c10n`, `clevercanyon`.
+
+						const parentDirBrand = $brandꓺget(parentDirBasename);
+						const parentDirOwner = parentDirBrand?.org?.slug || parentDirBasename;
 
 						/**
 						 * Further validates `dir` argument.
@@ -137,9 +141,9 @@ export default {
 
 						const branch = String(args.branch || 'main');
 						let repoURL = String(args.from || args.template || '{{parentDirBasename}}/skeleton');
+						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $urlꓺencode(parentDirOwner));
 
-						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $urlꓺencode(parentDirBasename));
-						if (repoURL.indexOf('/') === -1) repoURL = $urlꓺencode(parentDirBasename) + '/' + repoURL;
+						if (repoURL.indexOf('/') === -1) repoURL = $urlꓺencode(parentDirOwner) + '/' + repoURL;
 						if (repoURL.indexOf('//') === -1) repoURL = 'https://github.com/' + repoURL;
 						if (!repoURL.endsWith('.git')) repoURL += '.git';
 
