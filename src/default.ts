@@ -8,7 +8,7 @@ import fsp from 'node:fs/promises';
 
 import * as u from './resources/cli/utilities.js';
 import { $is, $fn, $brand, $url } from '@clevercanyon/utilities';
-import { $cmd, $path, $yargs } from '@clevercanyon/utilities.node';
+import { $fs, $cmd, $yargs } from '@clevercanyon/utilities.node';
 
 import type { Props } from './resources/cli/cmds/run.js';
 
@@ -154,7 +154,7 @@ export default {
 						 * Fires an event if new directory contains a `.madrun.*` config file.
 						 */
 
-						if (await $path.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
+						if (await $fs.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
 							const argsToEventHandler = [
 								...(args.pkg ? ['--pkg'] : []),
 								...(args.pkgName ? ['--pkgName', String(args.pkgName)] : []),

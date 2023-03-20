@@ -8,7 +8,7 @@ import path from 'node:path';
 
 import * as u from '../utilities.js';
 import { $is, $str, $obj } from '@clevercanyon/utilities';
-import { $cmd, $chalk, $path } from '@clevercanyon/utilities.node';
+import { $fs, $cmd, $chalk } from '@clevercanyon/utilities.node';
 
 /**
  * Types/interfaces.
@@ -177,7 +177,7 @@ export default class Run {
 		if ('' === this.cmd) {
 			throw new Error('Missing command name.');
 		}
-		const foundConfigFile = $path.findUpSync(u.configFiles);
+		const foundConfigFile = $fs.findUpSync(u.configFiles);
 
 		if (foundConfigFile) {
 			this.configFile = foundConfigFile;
