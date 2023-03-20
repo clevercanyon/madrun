@@ -5,17 +5,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { findUpSync } from 'find-up';
-
-import chalk from 'chalk';
-import _ꓺomit from 'lodash/omit.js';
-import _ꓺisPlainObject from 'lodash/isPlainObject.js';
 
 import * as u from '../utilities.js';
-import type { AllArgs as uꓺAllArgs, Args as uꓺArgs } from '../utilities.js';
-
-import { escRegExp as $strꓺescRegExp } from '@clevercanyon/utilities/str';
-import { exec as $cmdꓺexec, spawn as $cmdꓺspawn, quote as $cmdꓺquote, quoteAll as $cmdꓺquoteAll } from '@clevercanyon/utilities.node/cmd';
+import { $is, $str, $obj } from '@clevercanyon/utilities';
+import { $cmd, $chalk, $path } from '@clevercanyon/utilities.node';
 
 /**
  * Types/interfaces.
@@ -108,14 +101,14 @@ export type ConfigFnRtns = { [x: string]: CMDConfig };
  *      }
  */
 
-export type CMDConfig = string | Array<string | CMDFn | CMDFnSync> | CMDConfigObj | CMDConfigFn | CMDConfigFnSync;
+export type CMDConfig = string | (string | CMDFn | CMDFnSync)[] | CMDConfigObject | CMDConfigFn | CMDConfigFnSync;
 export type CMDConfigFn = (madrun: Props) => Promise<CMDConfigFnRtns>;
 export type CMDConfigFnSync = (madrun: Props) => CMDConfigFnRtns;
-export type CMDConfigFnRtns = string | CMDFn | CMDFnSync | Array<string | CMDFn | CMDFnSync> | CMDConfigObj;
+export type CMDConfigFnRtns = string | CMDFn | CMDFnSync | (string | CMDFn | CMDFnSync)[] | CMDConfigObject;
 
-export type CMDConfigObj = { env?: Env; opts?: Opts; cmds: CMDConfigObjCMDs };
-export type CMDConfigObjCMDs = string | CMDFn | CMDFnSync | CMDSingleConfigObj | Array<string | CMDFn | CMDFnSync | CMDSingleConfigObj>;
-export type CMDSingleConfigObj = { env?: Env; opts?: Opts; cmd: string | CMDFn | CMDFnSync };
+export type CMDConfigObject = { env?: Env; opts?: Opts; cmds: CMDConfigObjectCMDs };
+export type CMDConfigObjectCMDs = string | CMDFn | CMDFnSync | CMDSingleConfigObject | (string | CMDFn | CMDFnSync | CMDSingleConfigObject)[];
+export type CMDSingleConfigObject = { env?: Env; opts?: Opts; cmd: string | CMDFn | CMDFnSync };
 
 export type CMDFn = (madrun: Props) => Promise<CMDFnRtns>;
 export type CMDFnSync = (madrun: Props) => CMDFnRtns;
@@ -129,10 +122,10 @@ export type StructuredCMDConfigData = { env: Env; opts: Opts; cmds: CMDs };
 
 export type Env = { [x: string]: unknown };
 export type Opts = { [x: string]: unknown };
-export type CMDs = Array<{ env: Env; opts: Opts; cmd: string | CMDFn }>;
+export type CMDs = { env: Env; opts: Opts; cmd: string | CMDFn }[];
 
 export type CMD = string; // Formality.
-export type Args = uꓺArgs; // From utilities.
+export type Args = u.Args; // From utilities.
 export type Ctx = { cwd: string; env: Env; opts: Opts };
 export type Props = { cmd: CMD; args: Args; ctx: Ctx };
 
@@ -143,7 +136,7 @@ export default class Run {
 	/**
 	 * All Yargs args.
 	 */
-	protected allArgs: uꓺAllArgs;
+	protected allArgs: u.AllArgs;
 
 	/**
 	 * Called CMD name.
@@ -173,18 +166,18 @@ export default class Run {
 	/**
 	 * Constructor.
 	 */
-	public constructor(args: uꓺAllArgs) {
+	public constructor(args: u.AllArgs) {
 		this.allArgs = args;
 
 		this.cmd = String(args._?.[0] || '');
 		this.args = {
 			_: args._.slice(1),
-			..._ꓺomit(args, u.omitFromNamedArgs),
+			...$obj.omit(args, u.omitFromNamedArgs),
 		};
 		if ('' === this.cmd) {
 			throw new Error('Missing command name.');
 		}
-		const foundConfigFile = findUpSync(u.configFiles);
+		const foundConfigFile = $path.findUpSync(u.configFiles);
 
 		if (foundConfigFile) {
 			this.configFile = foundConfigFile;
@@ -199,14 +192,14 @@ export default class Run {
 			opts: {}, // Populated for CMDs.
 		};
 		if (this.allArgs.madrunDebug) {
-			console.debug(chalk.black('cwd:') + ' ' + chalk.gray(this.cwd));
-			console.debug(chalk.black('args:') + ' ' + chalk.gray(JSON.stringify(this.allArgs, null, 4)));
-			console.debug(chalk.black('configFile:') + ' ' + chalk.gray(this.configFile));
-			console.debug(chalk.black('---'));
+			console.debug($chalk.black('cwd:') + ' ' + $chalk.gray(this.cwd));
+			console.debug($chalk.black('args:') + ' ' + $chalk.gray(JSON.stringify(this.allArgs, null, 4)));
+			console.debug($chalk.black('configFile:') + ' ' + $chalk.gray(this.configFile));
+			console.debug($chalk.black('---'));
 
-			console.debug(chalk.black('cmdName:') + ' ' + chalk.gray(this.cmd));
-			console.debug(chalk.black('cmdArgs:') + ' ' + chalk.gray(JSON.stringify(this.args, null, 4)));
-			console.debug(chalk.black('---'));
+			console.debug($chalk.black('cmdName:') + ' ' + $chalk.gray(this.cmd));
+			console.debug($chalk.black('cmdArgs:') + ' ' + $chalk.gray(JSON.stringify(this.args, null, 4)));
+			console.debug($chalk.black('---'));
 		}
 	}
 
@@ -218,30 +211,30 @@ export default class Run {
 		const cmdConfigData = await this.structuredCMDConfigData();
 
 		for (const cmdData of cmdConfigData.cmds) {
-			if (typeof cmdData.cmd === 'function') {
+			if ($is.function(cmdData.cmd)) {
 				// Propagates env vars in given CMD.
 				await this.propagateCMD(cmdData.env);
 
 				if (this.allArgs.madrunDebug) {
-					console.debug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					console.debug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					console.debug(chalk.black('rawCMD:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					console.debug(chalk.black('cmd:') + ' ' + chalk.gray('[function]')); // Function CMD.
-					console.debug(chalk.black('---'));
+					console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					console.debug($chalk.black('rawCMD:') + ' ' + $chalk.gray('[function]')); // Function CMD.
+					console.debug($chalk.black('cmd:') + ' ' + $chalk.gray('[function]')); // Function CMD.
+					console.debug($chalk.black('---'));
 				}
 				await cmdData.cmd({ cmd: this.cmd, args: this.args, ctx: { ...this.ctx, env: cmdData.env, opts: cmdData.opts } });
 			} else {
 				// Populates env vars & replacement codes in given CMD.
-				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
+				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd as string);
 
 				if (this.allArgs.madrunDebug) {
-					console.debug(chalk.black('rawEnv:') + ' ' + chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-					console.debug(chalk.black('rawOpts:') + ' ' + chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
-					console.debug(chalk.black('rawCMD:') + ' ' + chalk.gray(cmdData.cmd)); // String CMD.
-					console.debug(chalk.black('cmd:') + ' ' + chalk.gray(cmd));
-					console.debug(chalk.black('---'));
+					console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));
+					console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+					console.debug($chalk.black('rawCMD:') + ' ' + $chalk.gray(cmdData.cmd)); // String CMD.
+					console.debug($chalk.black('cmd:') + ' ' + $chalk.gray(cmd));
+					console.debug($chalk.black('---'));
 				}
-				await $cmdꓺexec(cmd, { cwd: this.cwd, ...cmdData.opts });
+				await $cmd.exec(cmd, { cwd: this.cwd, ...cmdData.opts });
 			}
 		}
 	}
@@ -261,21 +254,19 @@ export default class Run {
 		const canInstallClean = fs.existsSync(pkgLockFile) || fs.existsSync(npmShrinkwrapFile);
 
 		if (this.allArgs.madrunDebug) {
-			console.debug(chalk.black('Auto-installing NPM package dependencies.'));
-			console.debug(chalk.black('---'));
+			console.debug($chalk.black('Auto-installing NPM package dependencies.'));
+			console.debug($chalk.black('---'));
 		}
-		await $cmdꓺspawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
+		await $cmd.spawn('npm', canInstallClean ? ['ci'] : ['install'], { cwd: this.cwd });
 	}
 
 	/**
 	 * Gets configuration.
 	 *
-	 * @returns Configuration; else `null` for events w/o a listener.
-	 *
-	 * @throws  Error if anything unexpected occurs.
+	 * @returns Configuration, else `undefined` for events w/o a listener.
 	 */
-	protected async config(): Promise<Config | null> {
-		let config = null; // Initialize.
+	protected async config(): Promise<Config | undefined> {
+		let config = undefined; // Initialize.
 
 		if ('default' === this.configFile) {
 			config = (await import('../../../default.js')).default as Config;
@@ -286,12 +277,13 @@ export default class Run {
 		} else if (this.configFile) {
 			config = ((await import(this.configFile)) as { default: unknown }).default as Config;
 		}
-		if (null === config && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === config /* Cannot be null otherwise. */) {
+		if (undefined === config && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === config /* Cannot be null otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
-		if (!_ꓺisPlainObject(config) && typeof config !== 'function') {
+		if (!$is.plainObject(config) && !$is.function(config)) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
 		return config;
@@ -300,27 +292,28 @@ export default class Run {
 	/**
 	 * Gets config function.
 	 *
-	 * @returns Config function; else `null` for events w/o a listener.
+	 * @returns Config function; else `undefined` for events w/o a listener.
 	 */
-	protected async configFn(): Promise<ConfigFn | ConfigFnSync | null> {
+	protected async configFn(): Promise<ConfigFn | ConfigFnSync | undefined> {
 		let config = await this.config();
 
-		if (null === config && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
+		if (undefined === config && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
 		}
-		if (null === config /* Cannot be null otherwise. */) {
+		if (undefined === config /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
-		if (typeof config === 'object' && _ꓺisPlainObject(config)) {
+		if ($is.plainObject(config)) {
 			const configObj = config; // Object pointer.
 			config = async (): Promise<ConfigFnRtns> => configObj;
 		}
-		if (null === config && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === config /* Cannot be null otherwise. */) {
+		if (undefined === config && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === config /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
-		if (typeof config !== 'function') {
+		if (!$is.function(config)) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
 		return config; // As function.
@@ -329,22 +322,24 @@ export default class Run {
 	/**
 	 * Gets CMD config for current `cmdName`.
 	 *
-	 * @returns CMD config; else `null` for events w/o a listener.
+	 * @returns CMD config; else `undefined` for events w/o a listener.
 	 */
-	protected async cmdConfig(): Promise<CMDConfig | null> {
+	protected async cmdConfig(): Promise<CMDConfig | undefined> {
 		const configFn = await this.configFn();
 
-		if (null === configFn && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === configFn /* Cannot be null otherwise. */) {
+		if (undefined === configFn && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === configFn /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + path.basename(this.configFile) + '` config failure.');
 		}
 		const cmdConfigs = await configFn({ cmd: this.cmd, args: this.args, ctx: this.ctx });
-		const cmdConfig = cmdConfigs[this.cmd] || null; // By CMD name.
+		const cmdConfig = cmdConfigs[this.cmd] || undefined; // By CMD name.
 
-		if (null === cmdConfig && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === cmdConfig /* Cannot be null otherwise. */) {
+		if (undefined === cmdConfig && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + this.cmd + '` command is unavailable.');
 		}
 		return cmdConfig;
@@ -353,34 +348,36 @@ export default class Run {
 	/**
 	 * Gets CMD config function for current `cmdName`.
 	 *
-	 * @returns CMD config function; else `null` for events w/o a listener.
+	 * @returns CMD config function; else `undefined` for events w/o a listener.
 	 */
-	protected async cmdConfigFn(): Promise<CMDConfigFn | CMDConfigFnSync | null> {
+	protected async cmdConfigFn(): Promise<CMDConfigFn | CMDConfigFnSync | undefined> {
 		let cmdConfig = await this.cmdConfig();
 
-		if (null === cmdConfig && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === cmdConfig /* Cannot be null otherwise. */) {
+		if (undefined === cmdConfig && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + this.cmd + '` command is unavailable.');
 		}
-		if (typeof cmdConfig === 'string') {
+		if ($is.string(cmdConfig)) {
 			const cmdConfigStr = cmdConfig; // String pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigStr;
 			//
-		} else if (Array.isArray(cmdConfig)) {
+		} else if ($is.array(cmdConfig)) {
 			const cmdConfigArr = cmdConfig; // Array pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigArr;
 			//
-		} else if (_ꓺisPlainObject(cmdConfig)) {
+		} else if ($is.plainObject(cmdConfig)) {
 			const cmdConfigObj = cmdConfig; // Object pointer.
 			cmdConfig = async (): Promise<CMDConfigFnRtns> => cmdConfigObj;
 		}
-		if (null === cmdConfig && this.cmd.startsWith('on::')) {
-			return null; // Event w/o a listener.
-		} else if (null === cmdConfig /* Cannot be null otherwise. */) {
+		if (undefined === cmdConfig && this.cmd.startsWith('on::')) {
+			return undefined; // Event w/o a listener.
+			//
+		} else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + this.cmd + '` command is unavailable.');
 		}
-		if (typeof cmdConfig !== 'function') {
+		if (!$is.function(cmdConfig)) {
 			throw new Error('`' + this.cmd + '` command has an invalid data type.');
 		}
 		return cmdConfig; // As function.
@@ -394,55 +391,56 @@ export default class Run {
 	protected async structuredCMDConfigData(): Promise<StructuredCMDConfigData> {
 		const cmdConfigFn = await this.cmdConfigFn();
 
-		if (null === cmdConfigFn && this.cmd.startsWith('on::')) {
+		if (undefined === cmdConfigFn && this.cmd.startsWith('on::')) {
 			return { env: {}, opts: {}, cmds: [] }; // Event w/o a listener.
-		} else if (null === cmdConfigFn /* Cannot be null otherwise. */) {
+			//
+		} else if (undefined === cmdConfigFn /* Cannot be undefined otherwise. */) {
 			throw new Error('`' + this.cmd + '` command is unavailable.');
 		}
 		let cmdConfigData = await cmdConfigFn({ cmd: this.cmd, args: this.args, ctx: this.ctx });
 
-		cmdConfigData = typeof cmdConfigData === 'string' ? { cmds: '' === cmdConfigData ? [] : [cmdConfigData] } : cmdConfigData;
-		cmdConfigData = Array.isArray(cmdConfigData) ? { cmds: cmdConfigData } : cmdConfigData;
-		cmdConfigData = typeof cmdConfigData === 'function' ? { cmds: [cmdConfigData] } : cmdConfigData;
+		cmdConfigData = $is.string(cmdConfigData) ? { cmds: '' === cmdConfigData ? [] : [cmdConfigData] } : cmdConfigData;
+		cmdConfigData = $is.array(cmdConfigData) ? { cmds: cmdConfigData } : cmdConfigData;
+		cmdConfigData = $is.function(cmdConfigData) ? { cmds: [cmdConfigData] } : cmdConfigData;
 
-		if (!_ꓺisPlainObject(cmdConfigData)) {
+		if (!$is.plainObject(cmdConfigData)) {
 			throw new Error('`' + this.cmd + '` command config has an invalid data type.');
 		}
-		cmdConfigData = Object.assign({ env: {}, opts: {}, cmds: [] }, cmdConfigData);
+		cmdConfigData = $obj.assign({ env: {}, opts: {}, cmds: [] }, cmdConfigData) as unknown as CMDConfigObject;
 		(cmdConfigData.env = cmdConfigData.env || {}), (cmdConfigData.opts = cmdConfigData.opts || {});
 
-		cmdConfigData.cmds = typeof cmdConfigData.cmds === 'string' ? ('' === cmdConfigData.cmds ? [] : [cmdConfigData.cmds]) : cmdConfigData.cmds;
-		cmdConfigData.cmds = typeof cmdConfigData.cmds === 'function' ? [cmdConfigData.cmds] : cmdConfigData.cmds;
-		cmdConfigData.cmds = _ꓺisPlainObject(cmdConfigData.cmds) ? [cmdConfigData.cmds as CMDSingleConfigObj] : cmdConfigData.cmds;
+		cmdConfigData.cmds = $is.string(cmdConfigData.cmds) ? ('' === cmdConfigData.cmds ? [] : [cmdConfigData.cmds]) : cmdConfigData.cmds;
+		cmdConfigData.cmds = $is.function(cmdConfigData.cmds) ? [cmdConfigData.cmds] : cmdConfigData.cmds;
+		cmdConfigData.cmds = $is.plainObject(cmdConfigData.cmds) ? [cmdConfigData.cmds] : cmdConfigData.cmds;
 
-		if (!_ꓺisPlainObject(cmdConfigData.env)) {
+		if (!$is.plainObject(cmdConfigData.env)) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `env` property.');
 		}
-		if (!_ꓺisPlainObject(cmdConfigData.opts)) {
+		if (!$is.plainObject(cmdConfigData.opts)) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `opts` property.');
 		}
-		if (!Array.isArray(cmdConfigData.cmds) || !cmdConfigData.cmds.length) {
+		if (!$is.array(cmdConfigData.cmds) || !cmdConfigData.cmds.length) {
 			throw new Error('`' + this.cmd + '` command config contains invalid data for derived `cmds` property.');
 		}
 		for (let i = 0; i < cmdConfigData.cmds.length; i++) {
 			let cmdData = cmdConfigData.cmds[i];
 
-			cmdData = typeof cmdData === 'string' ? { cmd: cmdData } : cmdData;
-			cmdData = typeof cmdData === 'function' ? { cmd: cmdData } : cmdData;
+			cmdData = $is.string(cmdData) ? { cmd: cmdData } : cmdData;
+			cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
 
-			if (!_ꓺisPlainObject(cmdData)) {
+			if (!$is.plainObject(cmdData)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with an invalid data type.');
 			}
-			cmdData = Object.assign({ env: { ...cmdConfigData.env }, opts: { ...cmdConfigData.opts }, cmd: '' }, cmdData);
+			cmdData = $obj.assign({ env: { ...cmdConfigData.env }, opts: { ...cmdConfigData.opts }, cmd: '' }, cmdData) as unknown as CMDSingleConfigObject;
 			(cmdData.env = cmdData.env || {}), (cmdData.opts = cmdData.opts || {});
 
-			if (!_ꓺisPlainObject(cmdData.env)) {
+			if (!$is.plainObject(cmdData.env)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `env` property.');
 			}
-			if (!_ꓺisPlainObject(cmdData.opts)) {
+			if (!$is.plainObject(cmdData.opts)) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `opts` property.');
 			}
-			if (!cmdData.cmd || (typeof cmdData.cmd !== 'string' && typeof cmdData.cmd !== 'function')) {
+			if (!cmdData.cmd || (!$is.string(cmdData.cmd) && !$is.function(cmdData.cmd))) {
 				throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `cmd` property.');
 			}
 			cmdConfigData.cmds[i] = cmdData; // Update.
@@ -493,7 +491,7 @@ export default class Run {
 			if (v.startsWith('"') && v.endsWith('"')) {
 				return v; // Quoted already.
 			}
-			return $cmdꓺquote(v);
+			return $cmd.quote(v);
 		};
 		for (const [name, value] of Object.entries(env)) {
 			vars += ' export ' + name + '=' + maybeQuote(String(value)) + ';';
@@ -509,10 +507,10 @@ export default class Run {
 	 * @returns     Populated CMD + any args, or shell script to run.
 	 */
 	protected async populateCMDReplacementCodes(cmd: string): Promise<string> {
-		(this.args._ as Array<string | number>).forEach((v, i) => {
+		(this.args._ as (string | number)[]).forEach((v, i) => {
 			const position = String(i + 1);
-			const escRegExpPosition = $strꓺescRegExp(position);
-			const quotedArgValue = $cmdꓺquote(String(v));
+			const escRegExpPosition = $str.escRegExp(position);
+			const quotedArgValue = $cmd.quote(String(v));
 
 			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
 			const regExpArgValue = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escRegExpPosition + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
@@ -520,20 +518,20 @@ export default class Run {
 			cmd = cmd.replace(regExpArgParts, quotedArgValue);
 			cmd = cmd.replace(regExpArgValue, quotedArgValue);
 		});
-		for (const [n, v] of Object.entries(_ꓺomit(this.args, u.omitFromNamedArgs))) {
-			if (typeof v === 'boolean' && false === v) {
+		for (const [n, v] of Object.entries($obj.omit(this.args, u.omitFromNamedArgs))) {
+			if ($is.boolean(v) && false === v) {
 				continue; // Not applicable.
 			}
 			const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
-			const escRegExpArgPrefixedName = $strꓺescRegExp(argPrefixedName);
+			const escRegExpArgPrefixedName = $str.escRegExp(argPrefixedName);
 
-			const quotedArgValues = typeof v === 'boolean' ? ''
-					: Array.isArray(v) && n.endsWith('[') ? $cmdꓺquoteAll(v.concat(']').map((v) => String(v))).join(' ')
-					: Array.isArray(v) ? $cmdꓺquoteAll(v.map((v) => String(v))).join(' ')
-					: $cmdꓺquote(String(v)); // prettier-ignore
+			const quotedArgValues = $is.boolean(v) ? ''
+					: $is.array(v) && n.endsWith('[') ? $cmd.quoteAll(v.concat(']').map((v) => String(v))).join(' ')
+					: $is.array(v) ? $cmd.quoteAll(v.map((v) => String(v))).join(' ')
+					: $cmd.quote(String(v)); // prettier-ignore
 
-			const quotedArgParts = $cmdꓺquote(argPrefixedName) //
-				+ (typeof v === 'boolean' ? '' : ' ' + quotedArgValues); // prettier-ignore
+			const quotedArgParts = $cmd.quote(argPrefixedName) //
+				+ ($is.boolean(v) ? '' : ' ' + quotedArgValues); // prettier-ignore
 
 			const regExpArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)' + escRegExpArgPrefixedName + '(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
 			const regExpArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)' + escRegExpArgPrefixedName + '(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
@@ -547,21 +545,21 @@ export default class Run {
 			for (const v of this.args._ as Array<string | number>) {
 				args.push(String(v)); // Positional argument.
 			}
-			for (const [n, v] of Object.entries(_ꓺomit(this.args, u.omitFromNamedArgs))) {
-				if (typeof v === 'boolean' && false === v) {
+			for (const [n, v] of Object.entries($obj.omit(this.args, u.omitFromNamedArgs))) {
+				if ($is.boolean(v) && false === v) {
 					continue; // Not applicable.
 				}
 				const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
 
-				const argValues = typeof v === 'boolean' ? []
-					: Array.isArray(v) && n.endsWith('[')  ? v.concat(']').map((v) => String(v))
-					: Array.isArray(v) ? v.map((v) => String(v))
+				const argValues = $is.boolean(v) ? []
+					: $is.array(v) && n.endsWith('[')  ? v.concat(']').map((v) => String(v))
+					: $is.array(v) ? v.map((v) => String(v))
 					: [String(v)]; // prettier-ignore
 
 				args.push(argPrefixedName);
 				args = args.concat(argValues);
 			}
-			return $cmdꓺquoteAll(args).join(' ');
+			return $cmd.quoteAll(args).join(' ');
 		});
 		// Empty any others remaining; i.e., that were not already filled above.
 		cmd = cmd.replace(this.regexpRemainingCMDArgParts, '').replace(this.regexpRemainingCMDArgValues, '');

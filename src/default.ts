@@ -6,13 +6,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
 
-import { findUp } from 'find-up';
 import * as u from './resources/cli/utilities.js';
-
-import { get as $brandꓺget } from '@clevercanyon/utilities/brand';
-import { encode as $urlꓺencode } from '@clevercanyon/utilities/url';
-import { spawn as $cmdꓺspawn } from '@clevercanyon/utilities.node/cmd';
-import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
+import { $is, $fn, $brand, $url } from '@clevercanyon/utilities';
+import { $cmd, $path, $yargs } from '@clevercanyon/utilities.node';
 
 import type { Props } from './resources/cli/cmds/run.js';
 
@@ -26,11 +22,11 @@ export default {
 			 * Yargs ⛵🏴‍☠.
 			 */
 			await (
-				await $yargsꓺcli({
+				await $yargs.cli({
 					strict: false,
 					scriptName: 'madrun',
 					errorBoxName: 'madrun',
-					version: u.version,
+					version: u.appPkgVersion,
 				})
 			)
 				.command({
@@ -121,8 +117,8 @@ export default {
 						const parentDir = path.dirname(dir); // One level up from new directory location.
 						const parentDirBasename = path.basename(parentDir); // e.g., `c10n`, `clevercanyon`.
 
-						const parentDirBrand = $brandꓺget(parentDirBasename);
-						const parentDirOwner = parentDirBrand?.org?.slug || parentDirBasename;
+						const maybeParentDirBrand = $fn.try(() => $brand.get(parentDirBasename))(); // Maybe.
+						const parentDirOwner = $is.brand(maybeParentDirBrand) ? maybeParentDirBrand.org.slug : parentDirBasename;
 
 						/**
 						 * Further validates `dir` argument.
@@ -141,9 +137,9 @@ export default {
 
 						const branch = String(args.branch || 'main');
 						let repoURL = String(args.from || args.template || '{{parentDirBasename}}/skeleton');
-						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $urlꓺencode(parentDirOwner));
+						repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $url.encode(parentDirOwner));
 
-						if (repoURL.indexOf('/') === -1) repoURL = $urlꓺencode(parentDirOwner) + '/' + repoURL;
+						if (repoURL.indexOf('/') === -1) repoURL = $url.encode(parentDirOwner) + '/' + repoURL;
 						if (repoURL.indexOf('//') === -1) repoURL = 'https://github.com/' + repoURL;
 						if (!repoURL.endsWith('.git')) repoURL += '.git';
 
@@ -151,20 +147,20 @@ export default {
 						 * Clones remote git repo and then deletes hidden `.git` directory.
 						 */
 
-						await $cmdꓺspawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1'], { cwd: ctx.cwd });
+						await $cmd.spawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1'], { cwd: ctx.cwd });
 						await fsp.rm(path.resolve(dir, './.git'), { recursive: true, force: true });
 
 						/**
 						 * Fires an event if new directory contains a `.madrun.*` config file.
 						 */
 
-						if (await findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
+						if (await $path.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
 							const argsToEventHandler = [
 								...(args.pkg ? ['--pkg'] : []),
 								...(args.pkgName ? ['--pkgName', String(args.pkgName)] : []),
 								...(args.public ? ['--public'] : []),
 							];
-							await $cmdꓺspawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
+							await $cmd.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
 						}
 					},
 				})

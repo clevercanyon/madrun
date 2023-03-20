@@ -3,13 +3,13 @@
  * Utilities.
  */
 
-declare const $$__APP_PKG_VERSION__$$: string;
-import type { Args as $yargsꓺArgs } from '@clevercanyon/utilities.node/yargs';
+import type * as $yargs from '@clevercanyon/utilities.node/yargs';
 
 /**
- * `$ madrun` version.
+ * `$ madrun` pkg name & version.
  */
-export const version = $$__APP_PKG_VERSION__$$;
+export const appPkgName = $$__APP_PKG_NAME__$$;
+export const appPkgVersion = $$__APP_PKG_VERSION__$$;
 
 /**
  * `$ madrun` config file names.
@@ -20,7 +20,7 @@ export const configFiles = ['.madrun.json', '.madrun.js', '.madrun.cjs', '.madru
 /**
  * Argument types and utilities.
  */
-export type AllArgs = $yargsꓺArgs<{ madrunHelp: boolean; madrunVersion: boolean; madrunDebug: boolean }>;
+export type AllArgs = $yargs.Args<{ madrunHelp: boolean; madrunVersion: boolean; madrunDebug: boolean }>;
 export type Args = Omit<AllArgs, '$0' | 'madrunHelp' | 'madrunVersion' | 'madrunDebug'>;
 export const omitFromNamedArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'madrunDebug'];
 

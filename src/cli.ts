@@ -2,25 +2,27 @@
  * CLI handler.
  */
 
+import { $env } from '@clevercanyon/utilities';
+import { $yargs } from '@clevercanyon/utilities.node';
+
 import Run from './resources/cli/cmds/run.js';
-
 import * as u from './resources/cli/utilities.js';
-import { cli as $yargsꓺcli } from '@clevercanyon/utilities.node/yargs';
 
-import type { AllArgs } from './resources/cli/utilities.js';
+$env.setTopLevelObp(u.appPkgName);
+$env.capture('@top', import.meta.env);
 
 /**
  * Yargs ⛵🏴‍☠.
  */
 void (async () => {
 	await (
-		await $yargsꓺcli({
+		await $yargs.cli({
 			strict: false,
 			scriptName: 'madrun',
 			errorBoxName: 'madrun',
 			helpOption: 'madrunHelp',
 			versionOption: 'madrunVersion',
-			version: u.version,
+			version: u.appPkgVersion,
 		})
 	)
 		.command({
@@ -43,7 +45,7 @@ void (async () => {
 			},
 			handler: async (args) => {
 				await u.propagateUserEnvVars();
-				await new Run(args as AllArgs).run();
+				await new Run(args as u.AllArgs).run();
 			},
 		})
 		.parse();
