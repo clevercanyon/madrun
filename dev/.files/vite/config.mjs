@@ -22,8 +22,8 @@ import { ViteMinifyPlugin as pluginMinifyHTML } from 'vite-plugin-minify';
 
 import u from '../bin/includes/utilities.mjs';
 import importAliases from './includes/import-aliases.mjs';
+import { $fs, $glob } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 import { $str, $obj, $obp } from '../../../node_modules/@clevercanyon/utilities/dist/index.js';
-import { $path, $glob } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -39,7 +39,7 @@ export default async ({ mode, command /*, ssrBuild */ }) => {
 	/**
 	 * Directory vars.
 	 */
-	const __dirname = $path.imuDirname(import.meta.url);
+	const __dirname = $fs.imuDirname(import.meta.url);
 	const projDir = path.resolve(__dirname, '../../..');
 
 	const srcDir = path.resolve(__dirname, '../../../src');
@@ -251,7 +251,7 @@ export default async ({ mode, command /*, ssrBuild */ }) => {
 				 * Generates a zip archive containing `./dist` directory.
 				 */
 				if ('build' === command) {
-					const archive = $path.archiver('zip', { zlib: { level: 9 } });
+					const archive = $fs.archiver('zip', { zlib: { level: 9 } });
 					archive.pipe(fs.createWriteStream(path.resolve(projDir, './.~dist.zip')));
 					archive.directory(distDir + '/', false);
 					await archive.finalize();

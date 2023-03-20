@@ -10,9 +10,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { $path } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 
-const __dirname = $path.imuDirname(import.meta.url);
+import { $fs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+
+const __dirname = $fs.imuDirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
 
 const srcDir = path.resolve(projDir, './src');

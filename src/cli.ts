@@ -2,14 +2,10 @@
  * CLI handler.
  */
 
-import { $env } from '@clevercanyon/utilities';
-import { $yargs } from '@clevercanyon/utilities.node';
-
+import './resources/init-env.js';
 import Run from './resources/cli/cmds/run.js';
 import * as u from './resources/cli/utilities.js';
-
-$env.setTopLevelObp(u.appPkgName);
-$env.capture('@top', import.meta.env);
+import { $yargs } from '@clevercanyon/utilities.node';
 
 /**
  * Yargs ⛵🏴‍☠.

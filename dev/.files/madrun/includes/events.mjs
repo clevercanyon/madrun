@@ -13,10 +13,10 @@ import path from 'node:path';
 import fsp from 'node:fs/promises';
 
 import u from '../../bin/includes/utilities.mjs';
-import { $path } from '../../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+import { $fs } from '../../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 import { $is, $fn, $url, $brand } from '../../../../node_modules/@clevercanyon/utilities/dist/index.js';
 
-const __dirname = $path.imuDirname(import.meta.url);
+const __dirname = $fs.imuDirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../../..');
 
 /**

@@ -12,9 +12,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import u from './includes/utilities.mjs';
-import { $chalk, $path, $yargs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+import { $fs, $chalk, $yargs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 
-const __dirname = $path.imuDirname(import.meta.url);
+const __dirname = $fs.imuDirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
 
 /**

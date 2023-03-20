@@ -17,9 +17,9 @@ import fsp from 'node:fs/promises';
 import u from './includes/utilities.mjs';
 import coreProjects from './includes/core-projects.mjs';
 import { $str } from '../../../node_modules/@clevercanyon/utilities/dist/index.js';
-import { $chalk, $cmd, $glob, $path, $yargs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+import { $fs, $chalk, $cmd, $glob, $yargs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 
-const __dirname = $path.imuDirname(import.meta.url);
+const __dirname = $fs.imuDirname(import.meta.url);
 const projDir = path.resolve(__dirname, '../../..');
 const projsDir = path.resolve(__dirname, '../../../..');
 

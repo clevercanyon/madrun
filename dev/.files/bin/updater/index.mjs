@@ -13,7 +13,7 @@ import fsp from 'node:fs/promises';
 
 import customRegexp from './data/custom-regexp.mjs';
 import { $is, $str, $obj, $obp } from '../../../../node_modules/@clevercanyon/utilities/dist/index.js';
-import { $cmd, $chalk, $path, $prettier } from '../../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+import { $fs, $cmd, $chalk, $prettier } from '../../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
 
 const { log } = console; // Shorter reference.
 
@@ -21,7 +21,7 @@ export default async ({ projDir }) => {
 	/**
 	 * Initializes vars.
 	 */
-	const __dirname = $path.imuDirname(import.meta.url);
+	const __dirname = $fs.imuDirname(import.meta.url);
 	const skeletonDir = path.resolve(__dirname, '../../../..');
 
 	/**
