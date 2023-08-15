@@ -3,7 +3,7 @@
 	"publishConfig": {
 		"access": "public"
 	},
-	"version": "1.0.74",
+	"version": "1.0.75",
 	"license": "GPL-3.0-or-later",
 	"name": "@clevercanyon/madrun",
 	"description": "Runs commands, shell scripts, or JS functions configured by a `.madrun.{json,js,cjs,mjs}` file.",
@@ -39,7 +39,7 @@
 			"types": "./dist/types/default.d.ts"
 		}
 	},
-	"sideEffects": ["./src/*.{html,scss,ts,tsx}", "./src/resources/init-env.ts"],
+	"sideEffects": ["./src/resources/init-env.ts", "./src/cli.ts", "./src/default.ts", "./src/index.ts"],
 	"module": "./dist/index.js",
 	"main": "./dist/index.cjs",
 	"browser": "",
@@ -51,16 +51,15 @@
 		}
 	},
 	"dependencies": {
-		"@clevercanyon/utilities": "^1.0.123",
-		"@clevercanyon/utilities.node": "^1.0.70"
+		"@clevercanyon/utilities": "^1.0.130",
+		"@clevercanyon/utilities.node": "^1.0.71"
 	},
 	"peerDependencies": {},
 	"peerDependenciesMeta": {},
 	"optionalDependencies": {},
 	"bundleDependencies": [],
 	"devDependencies": {
-		"@clevercanyon/skeleton-dev-deps": "^1.0.144",
-		"@types/node": "^18.15.5"
+		"@clevercanyon/skeleton-dev-deps": "^1.0.156"
 	},
 	"overrides": {},
 	"cpu": ["x64", "arm64"],
@@ -77,7 +76,13 @@
 				},
 				"build": {
 					"appType": "cma",
-					"targetEnv": "node"
+					"targetEnv": "node",
+					"entryFiles": []
+				},
+				"ssrBuild": {
+					"appType": "",
+					"targetEnv": "",
+					"entryFiles": []
 				},
 				"github": {
 					"teams": {
