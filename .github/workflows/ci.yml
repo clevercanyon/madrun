@@ -49,14 +49,14 @@ jobs:
       USER_DOTENV_KEY_CI: ${{secrets.USER_DOTENV_KEY_CI || ''}}
 
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
       - name: Setup Node v${{matrix.node-version}}
         uses: actions/setup-node@v3
         with:
           node-version: ${{matrix.node-version}}
           cache: npm # Caches NPM dependencies.
-
-      - name: Checkout Repo
-        uses: actions/checkout@v3
 
       - name: Get Package JSON
         shell: bash
