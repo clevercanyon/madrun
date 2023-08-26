@@ -51,8 +51,8 @@
 		}
 	},
 	"dependencies": {
-		"@clevercanyon/utilities": "^1.0.203",
-		"@clevercanyon/utilities.node": "^1.0.84"
+		"@clevercanyon/utilities": "^1.0.204",
+		"@clevercanyon/utilities.node": "^1.0.85"
 	},
 	"peerDependencies": {},
 	"peerDependenciesMeta": {},
