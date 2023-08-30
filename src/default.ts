@@ -7,12 +7,10 @@ import './resources/init-env.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import fsp from 'node:fs/promises';
-
 import * as u from './resources/cli/utilities.js';
+import type { Props } from './resources/cli/cmds/run.js';
 import { $is, $fn, $brand, $url } from '@clevercanyon/utilities';
 import { $fs, $cmd, $yargs } from '@clevercanyon/utilities.node';
-
-import type { Props } from './resources/cli/cmds/run.js';
 
 export default {
 	/**
