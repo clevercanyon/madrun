@@ -3,11 +3,11 @@
  * Run command.
  */
 
+import { $is, $obj, $str } from '@clevercanyon/utilities';
+import { $chalk, $cmd, $fs } from '@clevercanyon/utilities.node';
 import fs from 'node:fs';
 import path from 'node:path';
-import * as u from '../utilities.js';
-import { $is, $str, $obj } from '@clevercanyon/utilities';
-import { $fs, $cmd, $chalk } from '@clevercanyon/utilities.node';
+import * as u from '../utilities.ts';
 
 /**
  * Types/interfaces.
@@ -224,7 +224,7 @@ export default class Run {
 				await cmdData.cmd({ cmd: this.cmd, args: this.args, ctx: { ...this.ctx, env: cmdData.env, opts: cmdData.opts } });
 			} else {
 				// Populates env vars & replacement codes in given CMD.
-				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd as string);
+				const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
 				if (this.allArgs.madrunDebug) {
 					console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));

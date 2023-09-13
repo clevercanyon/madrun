@@ -2,15 +2,15 @@
  * Default config file.
  */
 
-import './resources/init-env.js';
+import './resources/init-env.ts';
 
+import { $brand, $fn, $is, $url } from '@clevercanyon/utilities';
+import { $cmd, $fs, $yargs } from '@clevercanyon/utilities.node';
 import fs from 'node:fs';
-import path from 'node:path';
 import fsp from 'node:fs/promises';
-import * as u from './resources/cli/utilities.js';
-import type { Props } from './resources/cli/cmds/run.js';
-import { $is, $fn, $brand, $url } from '@clevercanyon/utilities';
-import { $fs, $cmd, $yargs } from '@clevercanyon/utilities.node';
+import path from 'node:path';
+import type { Props } from './resources/cli/cmds/run.ts';
+import * as u from './resources/cli/utilities.ts';
 
 export default {
 	/**

@@ -14,8 +14,8 @@ export const appPkgVersion = $$__APP_PKG_VERSION__$$;
 /**
  * `$ madrun` config file names.
  */
-export const configFilesGlob = '.madrun.{json,js,cjs,mjs}';
-export const configFiles = ['.madrun.json', '.madrun.js', '.madrun.cjs', '.madrun.mjs'];
+export const configFilesGlob = '{madrun.config,.madrun}.{mjs,cjs,js,json}';
+export const configFiles = ['madrun.config.mjs', '.madrun.mjs', 'madrun.config.cjs', '.madrun.cjs', 'madrun.config.js', '.madrun.js', 'madrun.config.json', '.madrun.json'];
 
 /**
  * Argument types and utilities.
