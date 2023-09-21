@@ -28,8 +28,8 @@ export const omitFromNamedArgs = ['$0', '_', 'madrunHelp', 'madrunVersion', 'mad
  * Propagates user environment variables.
  */
 export const propagateUserEnvVars = async (): Promise<void> => {
-	process.env.NPM_TOKEN = process.env.USER_NPM_TOKEN || '';
-	process.env.GH_TOKEN = process.env.USER_GITHUB_TOKEN || '';
-	process.env.GITHUB_TOKEN = process.env.USER_GITHUB_TOKEN || '';
-	process.env.CLOUDFLARE_API_TOKEN = process.env.USER_CLOUDFLARE_TOKEN || '';
+    process.env.NPM_TOKEN = process.env.USER_NPM_TOKEN || '';
+    process.env.GH_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+    process.env.GITHUB_TOKEN = process.env.USER_GITHUB_TOKEN || '';
+    process.env.CLOUDFLARE_API_TOKEN = process.env.USER_CLOUDFLARE_TOKEN || '';
 };
