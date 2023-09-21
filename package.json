@@ -3,7 +3,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "1.0.98",
+    "version": "1.0.99",
     "license": "GPL-3.0-or-later",
     "name": "@clevercanyon/madrun",
     "description": "Runs commands, shell scripts, or JS functions configured by a `.madrun.{json,js,cjs,mjs}` file.",
@@ -24,24 +24,24 @@
     "imports": {},
     "exports": {
         ".": {
+            "types": "./dist/types/index.d.ts",
             "import": "./dist/index.js",
-            "require": "./dist/index.cjs",
-            "types": "./dist/types/index.d.ts"
+            "default": "./dist/index.js"
         },
         "./cli": {
+            "types": "./dist/types/cli.d.ts",
             "import": "./dist/cli.js",
-            "require": "./dist/cli.cjs",
-            "types": "./dist/types/cli.d.ts"
+            "default": "./dist/cli.js"
         },
         "./default": {
+            "types": "./dist/types/default.d.ts",
             "import": "./dist/default.js",
-            "require": "./dist/default.cjs",
-            "types": "./dist/types/default.d.ts"
+            "default": "./dist/default.js"
         }
     },
     "sideEffects": ["./src/resources/init-env.ts", "./src/cli.ts", "./src/default.ts", "./src/index.ts"],
     "module": "./dist/index.js",
-    "main": "./dist/index.cjs",
+    "main": "./dist/index.js",
     "browser": "",
     "unpkg": "./dist/index.js",
     "types": "./dist/types/index.d.ts",
@@ -51,15 +51,15 @@
         }
     },
     "dependencies": {
-        "@clevercanyon/utilities": "^1.0.264",
-        "@clevercanyon/utilities.node": "^1.0.104"
+        "@clevercanyon/utilities": "^1.0.265",
+        "@clevercanyon/utilities.node": "^1.0.105"
     },
     "peerDependencies": {},
     "peerDependenciesMeta": {},
     "optionalDependencies": {},
     "bundleDependencies": [],
     "devDependencies": {
-        "@clevercanyon/dev-deps": "^1.0.229"
+        "@clevercanyon/dev-deps": "^1.0.230"
     },
     "overrides": {},
     "cpu": ["x64", "arm64"],
