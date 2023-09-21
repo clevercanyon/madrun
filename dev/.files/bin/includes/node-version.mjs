@@ -10,11 +10,11 @@
  * Defines Node version.
  */
 export default {
-	previous: '19.1.0',
-	current: '20.5.1',
+    previous: '19.1.0',
+    current: '20.5.1',
 
-	npm: {
-		previous: '8.19.3',
-		current: '9.2.0',
-	},
+    npm: {
+        previous: '8.19.3',
+        current: '9.2.0',
+    },
 };

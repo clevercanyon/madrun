@@ -17,14 +17,22 @@
 # Generated data.
 # <generated:start>
 
-# Last generated Sun, Sep 17, 2023, 8:24:03 AM EDT.
+# Last generated Wed, Sep 20, 2023, 10:15:51 PM EDT.
 
 # Locals
 
 ._*
 .~*
 .#*
-*.local
+
+# Envs
+
+.envs
+*.env
+.env*
+.flaskenv*
+!.env.project
+!.env.vault
 
 # Logs
 
@@ -45,35 +53,71 @@
 
 # Editors
 
-# » Vim
+# » VS Code
 
-.*.swp
+*.code-*
 
 # » IntelliJ
 
 .idea
 
-# » Sublime
+# » Vim
 
-*.sublime-project
-*.sublime-workspace
-
-# » Netbeans
-
-*.nbproject
-
-# » VS Code
-
-*.code-search
-*.code-workspace
+.*.swp
 
 # » CTAGs
 
 *.ctags
 
-# Dist
+# Tooling
 
-dist
+# » Dotenv
+
+.env.me
+
+# » TypeScript
+
+.tscache
+*.tsbuildinfo
+
+# » Vite
+
+.vite
+.vitest
+
+# » Wrangler
+
+.wrangler
+.dev.vars
+.dev.vars.*
+
+# » Rollup
+
+.rollup
+
+# » Webpack
+
+.webpack
+
+# » Linaria
+
+.linaria-cache
+
+# » SASS
+
+.sass-cache
+
+# » Docker
+
+.docker
+
+# » Vagrant
+
+.vagrant
+
+# » Elastic Beanstalk
+
+.elasticbeanstalk
 
 # Packages
 
@@ -96,57 +140,6 @@ jspm_packages
 # » Bower
 
 bower_components
-
-# Dotenv
-
-.env*
-.flaskenv*
-!.env.vault
-!.env.project
-
-# TypeScript
-
-.tscache
-*.tsbuildinfo
-
-# Vite
-
-.vite
-.vitest
-
-# Wrangler
-
-.wrangler
-.dev.vars
-.dev.vars.*
-
-# Rollup
-
-.rollup
-
-# Webpack
-
-.webpack
-
-# Linaria
-
-.linaria-cache
-
-# SASS
-
-.sass-cache
-
-# Docker
-
-.docker
-
-# Vagrant
-
-.vagrant
-
-# Elastic Beanstalk
-
-.elasticbeanstalk
 
 # Version Control
 
@@ -207,6 +200,10 @@ Icon
 Network Trash Folder
 Temporary Items
 
+# Dist
+
+dist
+
 # </generated:end>
 
 ##
@@ -214,7 +211,7 @@ Temporary Items
 #
 # Please do not attempt to inject exceptions by customizing your project’s `./.gitignore` file
 # in ways that loosen our standard defaults. We have tooling in place that will conflict with your efforts.
-# For example, `vite-plugin-c10n-post-process` will automatically prune files from a resulting `./.dist`
+# For example, `vite-plugin-c10n-post-process` will automatically prune files from a resulting `./dist`
 # built with our tooling. The pruning that it does strictly adheres to our default `./.npmignore` rules,
 # which utilizes `./.gitignore`, and intentionally does not factor in your customizations.
 #

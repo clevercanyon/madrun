@@ -22,33 +22,33 @@ const nodeIncludeFile = path.resolve(__dirname, './includes/node.cjs');
  * Defines madrun configuration.
  */
 export default async (/* { cmd, args, ctx } */) => {
-	/**
-	 * Node options.
-	 */
-	const n = 'NODE_OPTIONS=' + // See: <https://o5p.me/Z4rfwi>.
-		[ `--require='${nodeIncludeFile}'` ].join(' ') + ' '; // prettier-ignore
+    /**
+     * Node options.
+     */
+    const n = 'NODE_OPTIONS=' + // See: <https://o5p.me/Z4rfwi>.
+        [ `--require='${nodeIncludeFile}'` ].join(' ') + ' '; // prettier-ignore
 
-	/**
-	 * Composition.
-	 */
-	return {
-		'envs': n + './dev/.files/bin/envs.mjs {{@}}',
-		'install': n + './dev/.files/bin/install.mjs {{@}}',
-		'update': n + './dev/.files/bin/update.mjs {{@}}',
+    /**
+     * Composition.
+     */
+    return {
+        'envs': n + './dev/.files/bin/envs.mjs {{@}}',
+        'install': n + './dev/.files/bin/install.mjs {{@}}',
+        'update': n + './dev/.files/bin/update.mjs {{@}}',
 
-		'dev': async ({ args }) => n + 'npx vite dev' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'preview': async ({ args }) => n + 'npx vite preview' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'build': async ({ args }) => n + 'npx vite build' + (args.mode ? '' : ' --mode=prod') + ' {{@}}',
+        'dev': async ({ args }) => n + 'npx vite dev' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'preview': async ({ args }) => n + 'npx vite preview' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'build': async ({ args }) => n + 'npx vite build' + (args.mode ? '' : ' --mode=prod') + ' {{@}}',
 
-		'tests': async ({ args }) => n + 'npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'tests:bench': async ({ args }) => n + 'npx vitest bench' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'tests:sandbox': async ({ args }) => n + 'VITEST_SANDBOX_ENABLE=true npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'tests:examples': async ({ args }) => n + 'VITEST_EXAMPLES_ENABLE=true npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'tests': async ({ args }) => n + 'npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'tests:bench': async ({ args }) => n + 'npx vitest bench' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'tests:sandbox': async ({ args }) => n + 'VITEST_SANDBOX_ENABLE=true npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'tests:examples': async ({ args }) => n + 'VITEST_EXAMPLES_ENABLE=true npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
 
-		'jest': n + 'npx jest {{@}}', // Runs project Jest tests.
-		'vitest': async ({ args }) => n + 'npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
-		'wrangler': n + 'CLOUDFLARE_API_TOKEN="${USER_CLOUDFLARE_TOKEN:-}" npx wrangler {{@}}',
+        'jest': n + 'npx jest {{@}}', // Runs project Jest tests.
+        'vitest': async ({ args }) => n + 'npx vitest' + (args.mode ? '' : ' --mode=dev') + ' {{@}}',
+        'wrangler': n + 'CLOUDFLARE_API_TOKEN="${USER_CLOUDFLARE_TOKEN:-}" npx wrangler {{@}}',
 
-		...events, // e.g., `on::madrun:default:new`.
-	};
+        ...events, // e.g., `on::madrun:default:new`.
+    };
 };

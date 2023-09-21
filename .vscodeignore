@@ -1,20 +1,12 @@
 ##
-# NPM ignore file.
+# VS Code ignore file.
 #
-# NPM is aware of this config file's location.
+# VS Code is aware of this config file's location.
 #
 # The generated portion of this file can be updated using:
 #
-#     $ madrun update npmignore
+#     $ madrun update vscodeignore
 #     or: $ madrun update dotfiles
-#
-# Run the following to test configuration:
-#
-#     $ npm pack --dry-run
-#
-# Please keep in mind that if `files` is used in `./package.json`,
-# the `files` setting will *not* be altered by an `./.npmignore` in the
-# main project directory. In such a case, `./.npmignore` is meaningless.
 #
 # @note CUSTOM EDITS ONLY PLEASE!
 # @note In the future this file will be updated automatically.
@@ -291,10 +283,10 @@ benchmarks
 ##
 # Customizations.
 #
-# Please do not attempt to inject exceptions by customizing your project’s `./.npmignore` file
+# Please do not attempt to inject exceptions by customizing your project’s `./.vscodeignore` file
 # in ways that loosen our standard defaults. We have tooling in place that will conflict with your efforts.
 # For example, `vite-plugin-c10n-post-process` will automatically prune files from a resulting `./dist`
-# built with our tooling. The pruning that it does strictly adheres to our default `./.npmignore` rules,
+# built with our tooling. The pruning that it does strictly adheres to our default `./.vscodeignore` rules,
 # and intentionally does not factor in your customizations.
 #
 # <custom:start>

@@ -73,7 +73,7 @@ export default {
 									description: // prettier-ignore
 										'Indicates intent to publish the project as a package.' +
 										' This option is simply passed to an `on::madrun:default:new` event handler.' +
-										' The repository you’re cloning must support this option in it’s `.madrun.*` config file.',
+										' The repository you’re cloning must support this option in it’s madrun config file.',
 								},
 								pkgName: {
 									type: 'string',
@@ -83,7 +83,7 @@ export default {
 									description: // prettier-ignore
 										'Indicates intent to use a specific package name.' +
 										' This option is simply passed to an `on::madrun:default:new` event handler.' +
-										' The repository you’re cloning must support this option in it’s `.madrun.*` config file.',
+										' The repository you’re cloning must support this option in it’s madrun config file.',
 								},
 								public: {
 									type: 'boolean',
@@ -93,7 +93,7 @@ export default {
 									description: // prettier-ignore
 										'Indicates intent to create a public project.' +
 										' This option is simply passed to an `on::madrun:default:new` event handler.' +
-										' The repository you’re cloning must support this option in it’s `.madrun.*` config file.',
+										' The repository you’re cloning must support this option in it’s madrun config file.',
 								},
 							})
 							.check(async (/* args */) => {

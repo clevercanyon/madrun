@@ -17,7 +17,7 @@
 # Generated data.
 # <generated:start>
 
-# Last generated Sun, Sep 17, 2023, 8:24:03 AM EDT.
+# Last generated Wed, Sep 20, 2023, 10:15:51 PM EDT.
 
 # Default
 
@@ -57,6 +57,12 @@
 *.h text
 *.srt text
 
+# PHP
+
+*.php text
+*.phtm text
+*.phtml text
+
 # Ruby
 
 *.rb text
@@ -64,14 +70,6 @@
 # Python
 
 *.py text
-
-# PHP
-
-*.php text
-*.phtm text
-*.phtml text
-*.phar binary
-*.phps text
 
 # ASP
 
@@ -91,11 +89,26 @@
 *.sh text
 *.zsh text
 *.bash text
-*.bat text
+
+# Node Archive
+
+*.node binary
+
+# PHP Archive
+
+*.phar binary
+
+# PHP Source
+
+*.phps text
 
 # Docker
 
 *.dockerfile text
+
+# JS Automation
+
+*.jxa text
 
 # AppleScript
 
@@ -103,29 +116,32 @@
 *.scpt binary
 *.scptd binary
 
+# Batch
+
+*.bat text
+
 # JavaScript
 
-*.node binary
+*.wasm binary
 *.js text
-*.jsx text
 *.cjs text
-*.cjsx text
 *.mjs text
+*.jsx text
+*.cjsx text
 *.mjsx text
 
 # TypeScript
 
 *.ts text
-*.tsx text
 *.cts text
-*.ctsx text
 *.mts text
+*.tsx text
+*.ctsx text
 *.mtsx text
 
 # Style
 
 *.css text
-*.sass text
 *.scss text
 *.less text
 *.xsd text
@@ -144,13 +160,21 @@
 
 # Liquid
 
-*.liq text
 *.liquid text
 
 # Other Template
 
-*.tmpl text
 *.tpl text
+
+# SQL
+
+*.sql text
+*.sqlite text
+
+# Delimited
+
+*.csv text
+*.tsv text
 
 # JSON
 
@@ -167,22 +191,33 @@
 *.yaml text
 *.yml text
 
+# INI
+
+*.ini text
+
+# Properties
+
+*.env text
+*.props text
+*.properties text
+
+# Apache
+
+*.conf text
+*.htaccess text
+*.htpasswd text
+
+# I18n
+
+*.po text
+*.mo binary
+
 # XML
 
 *.dtd text
 *.xhtm text
 *.xhtml text
 *.xml text
-
-# SQL
-
-*.sql text
-*.sqlite text
-
-# Delimited
-
-*.csv text
-*.tsv text
 
 # Calendar
 
@@ -196,34 +231,33 @@
 *.rss text
 *.rss2 text
 
-# I18n
-
-*.po text
-*.mo binary
-
 # Log
 
 *.log text
 
+# Other Data
+
+*.hex binary
+
 # Other Config
 
-*.htaccess text
-*.htpasswd text
-*.ini text
-*.cfg text
-*.conf text
-*.properties text
+*.babelrc text
+*.npmrc text
+*.yarnrc text
+*.inputrc text
+*.tsbuildinfo text
+*.editorconfig text
+*.shellcheckrc text
+*.browserslistrc text
 *.gitconfig text
+*.gitchange text
 *.gitattributes text
 *.gitignore text
-*.gitchange text
-*.npmrc text
 *.npmignore text
-*.yarnrc text
-*.babelrc text
-*.shellcheckrc text
-*.eslintignore text
+*.dockerignore text
+*.vscodeignore text
 *.prettierignore text
+*.eslintignore text
 
 # Image
 
@@ -314,6 +348,12 @@
 *.zip binary
 *.sketch binary
 
+# Certificate
+
+*.csr text
+*.crt text
+*.pem text
+
 # Other Application
 
 *.app binary
@@ -324,7 +364,6 @@
 *.dfxp binary
 *.dll binary
 *.exe binary
-*.pem text
 *.so binary
 
 # Google
@@ -398,12 +437,18 @@
 *.numbers binary
 *.pages binary
 
+# Special Cases
+
+*.env.* text
+CODEOWNERS text
+/src/cargo/_headers text
+/src/cargo/_redirects text
+
 ##
 # LFS storage rules.
 ##
 
 lfs/** filter=lfs diff=lfs merge=lfs -text
-lfs-*/** filter=lfs diff=lfs merge=lfs -text
 
 # </generated:end>
 
