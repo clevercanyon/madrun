@@ -3,7 +3,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "1.0.99",
+    "version": "1.0.100",
     "license": "GPL-3.0-or-later",
     "name": "@clevercanyon/madrun",
     "description": "Runs commands, shell scripts, or JS functions configured by a `.madrun.{json,js,cjs,mjs}` file.",
@@ -39,7 +39,7 @@
             "default": "./dist/default.js"
         }
     },
-    "sideEffects": ["./src/resources/init-env.ts", "./src/cli.ts", "./src/default.ts", "./src/index.ts"],
+    "sideEffects": ["**/*.{css,scss,less}", "./src/resources/init-env.ts"],
     "module": "./dist/index.js",
     "main": "./dist/index.js",
     "browser": "",
@@ -51,22 +51,22 @@
         }
     },
     "dependencies": {
-        "@clevercanyon/utilities": "^1.0.265",
-        "@clevercanyon/utilities.node": "^1.0.105"
+        "@clevercanyon/utilities": "^1.0.277",
+        "@clevercanyon/utilities.node": "^1.0.108"
     },
     "peerDependencies": {},
     "peerDependenciesMeta": {},
     "optionalDependencies": {},
     "bundleDependencies": [],
     "devDependencies": {
-        "@clevercanyon/dev-deps": "^1.0.230"
+        "@clevercanyon/dev-deps": "^1.0.231"
     },
     "overrides": {},
     "cpu": ["x64", "arm64"],
     "os": ["darwin", "linux"],
     "engines": {
-        "node": "^19.1.0 || ^20.5.1",
-        "npm": "^8.19.3 || ^9.2.0"
+        "node": "^19.1.0 || ^20.5.0",
+        "npm": "^8.19.3 || ^9.8.0 || ^10.0.0"
     },
     "config": {
         "c10n": {
@@ -77,12 +77,14 @@
                 "build": {
                     "appType": "cma",
                     "targetEnv": "node",
-                    "entryFiles": []
+                    "entryFiles": [],
+                    "sideEffects": []
                 },
                 "ssrBuild": {
                     "appType": "",
                     "targetEnv": "",
-                    "entryFiles": []
+                    "entryFiles": [],
+                    "sideEffects": []
                 },
                 "github": {
                     "teams": {
