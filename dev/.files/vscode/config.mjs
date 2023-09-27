@@ -123,8 +123,11 @@ export default async () => {
             ...(!(await u.isPkgRepo('clevercanyon/skeleton'))
                 ? {
                       ...exclusions.asBoolProps(
-                          // Skeleton `dev/.files/**`.
-                          ...exclusions.devDotFileIgnores,
+                          exclusions.asRootedRelativeGlobs(
+                              projDir, // Skeleton `/dev/.files`.
+                              [...exclusions.devDotFileIgnores],
+                              { forceRelative: true },
+                          ),
                           { tailGreedy: false },
                       ),
                       ...exclusions.asBoolProps(

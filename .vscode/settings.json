@@ -7,7 +7,7 @@
  * @note This entire file will be updated automatically.
  * @note Instead of editing here, please review `./settings.mjs`.
  *
- * Last generated using `./settings.mjs` Wed, Sep 27, 2023, 2:54:09 PM EDT.
+ * Last generated using `./settings.mjs` Wed, Sep 27, 2023, 6:40:42 PM EDT.
  */
 {
     "editor.autoIndent": "full",
@@ -128,16 +128,7 @@
     "search.useGlobalIgnoreFiles": false,
     "search.useParentIgnoreFiles": false,
     "search.exclude": {
-        "/": true,
-        "**/d": true,
-        "**/e": true,
-        "**/v": true,
-        "**/.": true,
-        "**/f": true,
-        "**/i": true,
-        "**/l": true,
-        "**/s": true,
-        "**/*": true,
+        "/dev/.files": true,
         "/.*": true,
         "/*.tsbuildinfo": true,
         "/*.config.*": true,
