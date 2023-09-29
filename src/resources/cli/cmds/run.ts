@@ -3,7 +3,7 @@
  * Run command.
  */
 
-import { $is, $obj, $str } from '@clevercanyon/utilities';
+import { $is, $json, $obj, $str } from '@clevercanyon/utilities';
 import { $chalk, $cmd, $fs } from '@clevercanyon/utilities.node';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -205,12 +205,12 @@ export default class Run {
         };
         if (this.allArgs.madrunDebug) {
             console.debug($chalk.black('cwd:') + ' ' + $chalk.gray(this.cwd));
-            console.debug($chalk.black('args:') + ' ' + $chalk.gray(JSON.stringify(this.allArgs, null, 4)));
+            console.debug($chalk.black('args:') + ' ' + $chalk.gray($json.stringify(this.allArgs, { pretty: true })));
             console.debug($chalk.black('configFile:') + ' ' + $chalk.gray(this.configFile));
             console.debug($chalk.black('---'));
 
             console.debug($chalk.black('cmdName:') + ' ' + $chalk.gray(this.cmd));
-            console.debug($chalk.black('cmdArgs:') + ' ' + $chalk.gray(JSON.stringify(this.args, null, 4)));
+            console.debug($chalk.black('cmdArgs:') + ' ' + $chalk.gray($json.stringify(this.args, { pretty: true })));
             console.debug($chalk.black('---'));
         }
     }
@@ -228,8 +228,8 @@ export default class Run {
                 await this.propagateCMD(cmdData.env); // @review Forget env vars after each CMD is run?
 
                 if (this.allArgs.madrunDebug) {
-                    console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-                    console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+                    console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray($json.stringify(cmdData.env, { pretty: true })));
+                    console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray($json.stringify(cmdData.opts, { pretty: true })));
                     console.debug($chalk.black('rawCMD:') + ' ' + $chalk.gray('[function]')); // Function CMD.
                     console.debug($chalk.black('cmd:') + ' ' + $chalk.gray('[function]')); // Function CMD.
                     console.debug($chalk.black('---'));
@@ -240,8 +240,8 @@ export default class Run {
                 const cmd = await this.populateCMD(cmdData.env, cmdData.cmd);
 
                 if (this.allArgs.madrunDebug) {
-                    console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));
-                    console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray(JSON.stringify(cmdData.opts, null, 4)));
+                    console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray($json.stringify(cmdData.env, { pretty: true })));
+                    console.debug($chalk.black('rawOpts:') + ' ' + $chalk.gray($json.stringify(cmdData.opts, { pretty: true })));
                     console.debug($chalk.black('rawCMD:') + ' ' + $chalk.gray(cmdData.cmd)); // String CMD.
                     console.debug($chalk.black('cmd:') + ' ' + $chalk.gray(cmd));
                     console.debug($chalk.black('---'));
@@ -444,16 +444,16 @@ export default class Run {
                   // If you pass a `string[]` elsewhere, it will instead be interpreted as a list of CMDs and not CMD parts (see above).
                   {
                       cmd: cmdData
-                          .map((v) => String(v))
-                          .map((s) =>
+                          .map(String)
+                          .map((cmdPart) =>
                               // We must not quote standalone replacement code parts here. That will happen later in {@see populateCMDReplacementCodes()}.
                               // Therefore, config files must be very careful about using replacement codes whenever an array of `string[]` CMD parts
                               // is to be quoted. Replacement codes must exist as standalone parts in the array or they’ll be quoted twice and crash.
-                              !this.allCMDArgPartsValuesStartToEndRegExp.test(s) && //
-                              !this.anyCMDArgPartsStartToEndRegExp.test(s) &&
-                              !this.anyCMDArgValuesStartToEndRegExp.test(s)
-                                  ? $cmd.quote(s)
-                                  : s,
+                              !this.allCMDArgPartsValuesStartToEndRegExp.test(cmdPart) && //
+                              !this.anyCMDArgPartsStartToEndRegExp.test(cmdPart) &&
+                              !this.anyCMDArgValuesStartToEndRegExp.test(cmdPart)
+                                  ? $cmd.quote(cmdPart)
+                                  : cmdPart,
                           )
                           .join(' '),
                   }
@@ -558,8 +558,8 @@ export default class Run {
             const escRegExpArgPrefixedName = $str.escRegExp(argPrefixedName);
 
             const quotedArgValues = $is.boolean(v) ? ''
-                    : $is.array(v) && n.endsWith('[') ? $cmd.quoteAll(v.concat(']').map((v) => String(v))).join(' ')
-                    : $is.array(v) ? $cmd.quoteAll(v.map((v) => String(v))).join(' ')
+                    : $is.array(v) && n.endsWith('[') ? $cmd.quoteAll(v.concat(']').map(String)).join(' ')
+                    : $is.array(v) ? $cmd.quoteAll(v.map(String)).join(' ')
                     : $cmd.quote(String(v)); // prettier-ignore
 
             const quotedArgParts = $cmd.quote(argPrefixedName) //
@@ -571,7 +571,7 @@ export default class Run {
             cmd = cmd.replace(regExpArgParts, quotedArgParts);
             cmd = cmd.replace(regExpArgValues, quotedArgValues);
         }
-        cmd = cmd.replace(this.allCMDArgPartsValuesRegExpGFlag, () => {
+        cmd = cmd.replace(this.allCMDArgPartsValuesGFlagRegExp, () => {
             let args = []; // Initialize list of arguments.
 
             for (const v of this.args._ as Array<string | number>) {
@@ -584,8 +584,8 @@ export default class Run {
                 const argPrefixedName = '-'.repeat(1 === n.length ? 1 : 2) + n;
 
                 const argValues = $is.boolean(v) ? []
-                    : $is.array(v) && n.endsWith('[')  ? v.concat(']').map((v) => String(v))
-                    : $is.array(v) ? v.map((v) => String(v))
+                    : $is.array(v) && n.endsWith('[') ? v.concat(']').map(String)
+                    : $is.array(v) ? v.map(String)
                     : [String(v)]; // prettier-ignore
 
                 args.push(argPrefixedName);
@@ -594,7 +594,7 @@ export default class Run {
             return $cmd.quoteAll(args).join(' ');
         });
         // Empty any others remaining; i.e., that were not already filled above.
-        cmd = cmd.replace(this.anyCMDArgPartsRegExpGFlag, '').replace(this.anyCMDArgValuesRegExpGFlag, '');
+        cmd = cmd.replace(this.anyCMDArgPartsGFlagRegExp, '').replace(this.anyCMDArgValuesGFlagRegExp, '');
 
         // Finally, compress any superfluous whitespace left behind by replacements.
         return cmd.replace(/[\t ]+/gu, ' ').trim();
@@ -618,7 +618,7 @@ export default class Run {
     protected anyCMDArgPartsStartToEndRegExp = new RegExp('^' + this.anyCMDArgPartsRegExpStr + '$', 'u');
     protected anyCMDArgValuesStartToEndRegExp = new RegExp('^' + this.anyCMDArgValuesRegExpStr + '$', 'u');
 
-    protected allCMDArgPartsValuesRegExpGFlag = new RegExp(this.allCMDArgPartsValuesRegExpStr, 'gu');
-    protected anyCMDArgPartsRegExpGFlag = new RegExp(this.anyCMDArgPartsRegExpStr, 'gu');
-    protected anyCMDArgValuesRegExpGFlag = new RegExp(this.anyCMDArgValuesRegExpStr, 'gu');
+    protected allCMDArgPartsValuesGFlagRegExp = new RegExp(this.allCMDArgPartsValuesRegExpStr, 'gu');
+    protected anyCMDArgPartsGFlagRegExp = new RegExp(this.anyCMDArgPartsRegExpStr, 'gu');
+    protected anyCMDArgValuesGFlagRegExp = new RegExp(this.anyCMDArgValuesRegExpStr, 'gu');
 }
