@@ -44,57 +44,70 @@ export type ConfigFnRtns = { [x: string]: CMDConfig };
  * Examples:
  *
  *      {
- *          'build'      => './path/to/build.js {{@}}',
- *          'build:prod' => './path/to/build.js --mode=prod',
+ *          'build': './path/to/build.js {{@}}',
+ *          'build:prod': './path/to/build.js --mode=prod',
  *
- *          'dev'   => [ // Triggers multiple CMDs.
- *
- *                         './path/to/build.js --mode=dev',
- *                         ({cmd, args, ctx}) => { postBuild(); },
- *                         'if [[ -n "${X_FOO}" ]]; then ... fi;',
- *                         './path/to/preview.js --mode=dev',
+ *          'dev': [ // Triggers multiple CMDs.
+ *              './path/to/build.js --mode=dev',
+ *              ({ cmd, args, ctx }) => { postBuild(); },
+ *              'if [[ -n "${X_FOO}" ]]; then ... fi;',
+ *              './path/to/preview.js --mode=dev',
  *           ],
  *
- *          'install'  => { // Triggers multiple carefully crafted CMDs.
+ *          'install': { // Triggers multiple carefully crafted CMDs.
  *              env: {
- *                  USERNAME     => 'xxxxxxxxxxxx',
- *                  ACCESS_TOKEN => 'xxxxxxxxxxxx',
+ *                  USERNAME: 'xxxxxxxxxxxx',
+ *                  ACCESS_TOKEN: 'xxxxxxxxxxxx',
  *              },
- *              opts: {
- *                  quiet: true,
- *              },
+ *              opts: { quiet: true },
  *              cmds: [
  *                  './pre-install.js',
- *                  ({cmd, args, ctx}) => { preInstall(); },
+ *                  ['npx', 'update', '--prefer-offline'],
+ *                  ({ cmd, args, ctx }) => { preInstall(); },
  *                  { opts: { quiet: false }, cmd: 'npm install' },
- *                  { opts: { quiet: false }, cmd: ({cmd, args, ctx}) => { postInstall(); } },
+ *                  { opts: { quiet: false }, cmd: ({ cmd, args, ctx }) => { postInstall(); } },
  *                  { env: { SECRET_TOKEN: 'xxxxxx' }, opts: { quiet: false }, cmd: 'npx command args' },
  *              ],
  *           },
  *
- *           'acp' => ({cmd, args, ctx}) => {
+ *           'acp': ({ cmd, args, ctx }) => {
  *               return 'git add --all && git commit -m "Update." && git push';
  *           },
  *
- *           'publish' => async ({cmd, args, ctx}) => {
+ *           'publish': async ({ cmd, args, ctx }) => {
  *               if ( args.tag ) {
- *                   return [ 'nmp version patch', 'npm publish', () => { tagRelease(); } ];
+ *                   return ['nmp version patch', 'npm publish', () => { tagRelease(); }];
  *               } else {
- *                   return [ 'nmp version patch', 'npm publish' ];
+ *                   return ['nmp version patch', 'npm publish'];
  *               }
  *           },
  *
- *           'ci' => async ({cmd, args, ctx}) => {
+ *           'ci': async ({ cmd, args, ctx }) => {
  *               return {
  *                   env: {
  *                       USERNAME     => 'xxxxxxxxxxxx',
  *                       ACCESS_TOKEN => 'xxxxxxxxxxxx',
  *                   },
- *                   cmds: [ 'npm install', 'npm test' ],
+ *                   cmds: ['npm ci', ['./run-tests', '--all']],
  *               };
  *           },
  *
- *           'test' => async ({cmd, args, ctx}) => {
+ *           'deploy': async ({ cmd, args, ctx }) => {
+ *               return {
+ *                   env: {
+ *                       USERNAME     => 'xxxxxxxxxxxx',
+ *                       ACCESS_TOKEN => 'xxxxxxxxxxxx',
+ *                   },
+ *                   cmds: [
+ *                      { env: { FOO: 'foo' }, cmd: 'npm ci' },
+ *                      { env: { BAR: 'bar' }, cmd: ['./run-tests', '--all'] },
+ *                      { cmd: async () => { const foo = 'foo'; await deploy(foo); },
+ *                      { opts: { quiet: true }, cmd: ['post-deploy', '--quiet', 'true'] },
+ *                   ],
+ *               };
+ *           },
+ *
+ *           'test': async ({ cmd, args, ctx }) => {
  *               return () => { args.ux ? runUXTests() : runAllTests() };
  *           },
  *      }
@@ -106,8 +119,8 @@ export type CMDConfigFnSync = (madrun: Props) => CMDConfigFnRtns;
 export type CMDConfigFnRtns = string | CMDFn | CMDFnSync | (string | CMDFn | CMDFnSync)[] | CMDConfigObject;
 
 export type CMDConfigObject = { env?: Env; opts?: Opts; cmds: CMDConfigObjectCMDs };
-export type CMDConfigObjectCMDs = string | CMDFn | CMDFnSync | CMDSingleConfigObject | (string | CMDFn | CMDFnSync | CMDSingleConfigObject)[];
-export type CMDSingleConfigObject = { env?: Env; opts?: Opts; cmd: string | CMDFn | CMDFnSync };
+export type CMDConfigObjectCMDs = string | CMDFn | CMDFnSync | CMDSingleConfigObject | (string | string[] | CMDFn | CMDFnSync | CMDSingleConfigObject)[];
+export type CMDSingleConfigObject = { env?: Env; opts?: Opts; cmd: string | string[] | CMDFn | CMDFnSync };
 
 export type CMDFn = (madrun: Props) => Promise<CMDFnRtns>;
 export type CMDFnSync = (madrun: Props) => CMDFnRtns;
@@ -212,7 +225,7 @@ export default class Run {
         for (const cmdData of cmdConfigData.cmds) {
             if ($is.function(cmdData.cmd)) {
                 // Propagates env vars in given CMD.
-                await this.propagateCMD(cmdData.env);
+                await this.propagateCMD(cmdData.env); // @review Forget env vars after each CMD is run?
 
                 if (this.allArgs.madrunDebug) {
                     console.debug($chalk.black('rawEnv:') + ' ' + $chalk.gray(JSON.stringify(cmdData.env, null, 4)));
@@ -425,6 +438,7 @@ export default class Run {
             let cmdData = cmdConfigData.cmds[i];
 
             cmdData = $is.string(cmdData) ? { cmd: cmdData } : cmdData;
+            cmdData = $is.array(cmdData) ? { cmd: $cmd.quoteAll(cmdData).join(' ') } : cmdData;
             cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
 
             if (!$is.plainObject(cmdData)) {
@@ -569,6 +583,8 @@ export default class Run {
 
     /**
      * Caches frequently used regular expressions.
+     *
+     * @note Global `g` flag is stateful, so please beware.
      */
     protected regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu'); // Both formats.
     protected regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
