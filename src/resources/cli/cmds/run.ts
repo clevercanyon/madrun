@@ -454,7 +454,8 @@ export default class Run {
                               !this.anyCMDArgValuesStartToEndRegExp.test(s)
                                   ? $cmd.quote(s)
                                   : s,
-                          ),
+                          )
+                          .join(' '),
                   }
                 : cmdData;
             cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
