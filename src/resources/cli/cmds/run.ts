@@ -438,7 +438,6 @@ export default class Run {
             let cmdData = cmdConfigData.cmds[i];
 
             cmdData = $is.string(cmdData) ? { cmd: cmdData } : cmdData;
-            cmdData = $is.array(cmdData) ? { cmd: $cmd.quoteAll(cmdData).join(' ') } : cmdData;
             cmdData = $is.array(cmdData) // This allows a CMD to be given as a `string[]` that we’ll quote automatically.
                 ? // Passing a `string[]` is only possible when `cmd` or `cmds` are explicitly given by a CMD object config.
                   // If you pass a `string[]` elsewhere, it will instead be interpreted as a list of CMDs and not CMD parts (see above).
@@ -449,11 +448,11 @@ export default class Run {
                               // We must not quote standalone replacement code parts here. That will happen later in {@see populateCMDReplacementCodes()}.
                               // Therefore, config files must be very careful about using replacement codes whenever an array of `string[]` CMD parts
                               // is to be quoted. Replacement codes must exist as standalone parts in the array or they’ll be quoted twice and crash.
-                              !this.allCMDArgPartsValuesStartToEndRegExp.test(cmdPart) && //
-                              !this.anyCMDArgPartsStartToEndRegExp.test(cmdPart) &&
-                              !this.anyCMDArgValuesStartToEndRegExp.test(cmdPart)
-                                  ? $cmd.quote(cmdPart)
-                                  : cmdPart,
+                              this.allCMDArgPartsValuesStartToEndRepeatingRegExp.test(cmdPart) || //
+                              this.anyCMDArgPartsStartToEndRepeatingRegExp.test(cmdPart) ||
+                              this.anyCMDArgValuesStartToEndRepeatingRegExp.test(cmdPart)
+                                  ? cmdPart // Defer quoting in this case.
+                                  : $cmd.quote(cmdPart),
                           )
                           .join(' '),
                   }
@@ -617,6 +616,10 @@ export default class Run {
     protected allCMDArgPartsValuesStartToEndRegExp = new RegExp('^' + this.allCMDArgPartsValuesRegExpStr + '$', 'u');
     protected anyCMDArgPartsStartToEndRegExp = new RegExp('^' + this.anyCMDArgPartsRegExpStr + '$', 'u');
     protected anyCMDArgValuesStartToEndRegExp = new RegExp('^' + this.anyCMDArgValuesRegExpStr + '$', 'u');
+
+    protected allCMDArgPartsValuesStartToEndRepeatingRegExp = new RegExp('^(?:' + this.allCMDArgPartsValuesRegExpStr + '\\s*)+$', 'u');
+    protected anyCMDArgPartsStartToEndRepeatingRegExp = new RegExp('^(?:' + this.anyCMDArgPartsRegExpStr + '\\s*)+$', 'u');
+    protected anyCMDArgValuesStartToEndRepeatingRegExp = new RegExp('^(?:' + this.anyCMDArgValuesRegExpStr + '\\s*)+$', 'u');
 
     protected allCMDArgPartsValuesGFlagRegExp = new RegExp(this.allCMDArgPartsValuesRegExpStr, 'gu');
     protected anyCMDArgPartsGFlagRegExp = new RegExp(this.anyCMDArgPartsRegExpStr, 'gu');
