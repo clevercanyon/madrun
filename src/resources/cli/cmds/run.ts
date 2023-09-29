@@ -439,6 +439,24 @@ export default class Run {
 
             cmdData = $is.string(cmdData) ? { cmd: cmdData } : cmdData;
             cmdData = $is.array(cmdData) ? { cmd: $cmd.quoteAll(cmdData).join(' ') } : cmdData;
+            cmdData = $is.array(cmdData) // This allows a CMD to be given as a `string[]` that we’ll quote automatically.
+                ? // Passing a `string[]` is only possible when `cmd` or `cmds` are explicitly given by a CMD object config.
+                  // If you pass a `string[]` elsewhere, it will instead be interpreted as a list of CMDs and not CMD parts (see above).
+                  {
+                      cmd: cmdData
+                          .map((v) => String(v))
+                          .map((s) =>
+                              // We must not quote standalone replacement code parts here. That will happen later in {@see populateCMDReplacementCodes()}.
+                              // Therefore, config files must be very careful about using replacement codes whenever an array of `string[]` CMD parts
+                              // is to be quoted. Replacement codes must exist as standalone parts in the array or they’ll be quoted twice and crash.
+                              !this.allCMDArgPartsValuesStartToEndRegExp.test(s) && //
+                              !this.anyCMDArgPartsStartToEndRegExp.test(s) &&
+                              !this.anyCMDArgValuesStartToEndRegExp.test(s)
+                                  ? $cmd.quote(s)
+                                  : s,
+                          ),
+                  }
+                : cmdData;
             cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
 
             if (!$is.plainObject(cmdData)) {
@@ -552,7 +570,7 @@ export default class Run {
             cmd = cmd.replace(regExpArgParts, quotedArgParts);
             cmd = cmd.replace(regExpArgValues, quotedArgValues);
         }
-        cmd = cmd.replace(this.regexAllCMDArgPartsValues, (/* All arguments. */) => {
+        cmd = cmd.replace(this.allCMDArgPartsValuesRegExpGFlag, () => {
             let args = []; // Initialize list of arguments.
 
             for (const v of this.args._ as Array<string | number>) {
@@ -575,7 +593,7 @@ export default class Run {
             return $cmd.quoteAll(args).join(' ');
         });
         // Empty any others remaining; i.e., that were not already filled above.
-        cmd = cmd.replace(this.regexpRemainingCMDArgParts, '').replace(this.regexpRemainingCMDArgValues, '');
+        cmd = cmd.replace(this.anyCMDArgPartsRegExpGFlag, '').replace(this.anyCMDArgValuesRegExpGFlag, '');
 
         // Finally, compress any superfluous whitespace left behind by replacements.
         return cmd.replace(/[\t ]+/gu, ' ').trim();
@@ -584,9 +602,22 @@ export default class Run {
     /**
      * Caches frequently used regular expressions.
      *
-     * @note Global `g` flag is stateful, so please beware.
+     * @note The `|` pipe can be used to delimit positional or named arg aliases.
+     * @note The global `g` flag is stateful, so we create separate RegExps for those.
      */
-    protected regexAllCMDArgPartsValues = new RegExp('\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}', 'gu'); // Both formats.
-    protected regexpRemainingCMDArgParts = new RegExp('\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}', 'gu');
-    protected regexpRemainingCMDArgValues = new RegExp('\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}', 'gu');
+    protected allCMDArgPartsValuesRegExpStr = '\\$\\{{1}@\\}{1}|\\{{2}@\\}{2}'; // ← Both formats.
+    protected anyCMDArgPartsRegExpStr = '\\{{2}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{2}';
+    protected anyCMDArgValuesRegExpStr = '\\$\\{{1}\\s*(?:|[^}]+\\|)(?:[0-9]+|-{1,2}[^|}]+)(?:|\\|[^}]+)\\s*\\}{1}';
+
+    protected allCMDArgPartsValuesRegExp = new RegExp(this.allCMDArgPartsValuesRegExpStr, 'u');
+    protected anyCMDArgPartsRegExp = new RegExp(this.anyCMDArgPartsRegExpStr, 'u');
+    protected anyCMDArgValuesRegExp = new RegExp(this.anyCMDArgValuesRegExpStr, 'u');
+
+    protected allCMDArgPartsValuesStartToEndRegExp = new RegExp('^' + this.allCMDArgPartsValuesRegExpStr + '$', 'u');
+    protected anyCMDArgPartsStartToEndRegExp = new RegExp('^' + this.anyCMDArgPartsRegExpStr + '$', 'u');
+    protected anyCMDArgValuesStartToEndRegExp = new RegExp('^' + this.anyCMDArgValuesRegExpStr + '$', 'u');
+
+    protected allCMDArgPartsValuesRegExpGFlag = new RegExp(this.allCMDArgPartsValuesRegExpStr, 'gu');
+    protected anyCMDArgPartsRegExpGFlag = new RegExp(this.anyCMDArgPartsRegExpStr, 'gu');
+    protected anyCMDArgValuesRegExpGFlag = new RegExp(this.anyCMDArgValuesRegExpStr, 'gu');
 }
