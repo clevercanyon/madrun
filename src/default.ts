@@ -49,10 +49,10 @@ export default {
                             .options({
                                 from: {
                                     type: 'string',
-                                    alias: ['clone'],
                                     requiresArg: true,
                                     demandOption: false,
                                     default: '',
+                                    alias: ['clone', 'skeleton'],
                                     description: // prettier-ignore
 										'Alternate way of passing [template]. Git repository to clone and use as a template.' +
 										' Can be a full URL, or just `owner/repo` will suffice when cloning a GitHub repository.' +
@@ -112,6 +112,7 @@ export default {
                         /**
                          * Initializes a few variables.
                          */
+                        const _ = {}; // Initialize temp vars.
 
                         const dir = path.resolve(ctx.cwd, String(args.dir));
                         const parentDir = path.dirname(dir); // One level up from new directory location.
