@@ -2,7 +2,7 @@
  * Default config file.
  */
 
-import './resources/init-env.ts';
+import './resources/init.ts';
 
 import { $brand, $fn, $is, $url } from '@clevercanyon/utilities';
 import { $cmd, $fs, $yargs } from '@clevercanyon/utilities.node';

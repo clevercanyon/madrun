@@ -2,7 +2,7 @@
  * CLI handler.
  */
 
-import './resources/init-env.ts';
+import './resources/init.ts';
 
 import { $yargs } from '@clevercanyon/utilities.node';
 import Run from './resources/cli/cmds/run.ts';
