@@ -30,16 +30,19 @@ export default {
                 })
             )
                 .command({
-                    command: ['new <dir> [template]'],
+                    command: ['new <projDir> [template]'],
                     describe: 'Starts a new project using an existing GitHub repo as a template.',
                     builder: (yargs) => {
                         return yargs
-                            .positional('dir', {
+                            .positional('projDir', {
                                 type: 'string',
-                                describe: 'New directory basename, subpath, or absolute path.',
+                                demandOption: true,
+                                default: '',
+                                describe: 'New project directory basename, subpath, or absolute path.',
                             })
                             .positional('template', {
                                 type: 'string',
+                                demandOption: false,
                                 default: '{{parentDirBasename}}/skeleton',
                                 description: // prettier-ignore
 									'Git repository to clone and use as a template.' +
@@ -102,66 +105,53 @@ export default {
                     },
                     handler: async (args) => {
                         /**
-                         * Validates `dir` argument.
+                         * Validates `projDir`.
                          */
-
-                        if (!String(args.dir || '')) {
+                        if (!args.projDir) {
                             throw new Error('Missing new directory location.');
                         }
 
                         /**
                          * Initializes a few variables.
                          */
-                        const _ = {}; // Initialize temp vars.
+                        const projDir = path.resolve(ctx.cwd, args.projDir);
 
-                        const dir = path.resolve(ctx.cwd, String(args.dir));
-                        const parentDir = path.dirname(dir); // One level up from new directory location.
-                        const parentDirBasename = path.basename(parentDir); // e.g., `c10n`, `clevercanyon`.
+                        const _parentDirBasename = path.basename(path.dirname(projDir));
+                        const _dirBasename = path.basename(projDir);
 
-                        const maybeParentDirBrand = $fn.try(() => $brand.get(parentDirBasename))(); // Maybe.
-                        const parentDirOwner = $is.brand(maybeParentDirBrand) ? maybeParentDirBrand.org.slug : parentDirBasename;
+                        const _maybeParentDirBrand = $fn.try(() => $brand.get('@' + _parentDirBasename + '/' + _dirBasename))();
+                        const _parentDirOwner = $is.brand(_maybeParentDirBrand) ? _maybeParentDirBrand.org.slug : _parentDirBasename;
 
-                        /**
-                         * Further validates `dir` argument.
-                         */
+                        let fromRepo = args.from || args.template || '{{parentDirBasename}}/skeleton';
+                        fromRepo = fromRepo.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $url.encode(_parentDirOwner));
+                        if (!fromRepo.includes('/')) fromRepo = $url.encode(_parentDirOwner) + '/' + fromRepo;
+                        if (!fromRepo.includes('//')) fromRepo = 'https://github.com/' + fromRepo;
+                        if (!fromRepo.endsWith('.git')) fromRepo += '.git';
 
-                        if (fs.existsSync(dir)) {
-                            throw new Error('Directory already exists: `' + dir + '`.');
-                        }
-                        if (!fs.existsSync(parentDir)) {
-                            throw new Error('Nonexistent parent directory: `' + parentDir + '`.');
-                        }
+                        const fromBranch = args.branch || 'main';
 
                         /**
-                         * Establishes `branch` and `use` values.
+                         * Further validates `projDir` argument.
                          */
-
-                        const branch = String(args.branch || 'main');
-                        let repoURL = String(args.from || args.template || '{{parentDirBasename}}/skeleton');
-                        repoURL = repoURL.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $url.encode(parentDirOwner));
-
-                        if (repoURL.indexOf('/') === -1) repoURL = $url.encode(parentDirOwner) + '/' + repoURL;
-                        if (repoURL.indexOf('//') === -1) repoURL = 'https://github.com/' + repoURL;
-                        if (!repoURL.endsWith('.git')) repoURL += '.git';
+                        if (fs.existsSync(projDir)) {
+                            throw new Error('Directory already exists: `' + projDir + '`.');
+                        }
+                        if (!fs.existsSync(path.dirname(projDir))) {
+                            throw new Error('Nonexistent parent directory: `' + path.dirname(projDir) + '`.');
+                        }
 
                         /**
                          * Clones remote git repo and then deletes hidden `.git` directory.
                          */
-
-                        await $cmd.spawn('git', ['clone', repoURL, dir, '--branch', branch, '--depth=1'], { cwd: ctx.cwd });
-                        await fsp.rm(path.resolve(dir, './.git'), { recursive: true, force: true });
+                        await $cmd.spawn('git', ['clone', fromRepo, projDir, '--branch', fromBranch, '--depth=1'], { cwd: ctx.cwd });
+                        await fsp.rm(path.resolve(projDir, './.git'), { recursive: true, force: true });
 
                         /**
-                         * Fires an event if new directory contains a `.madrun.*` config file.
+                         * Fires an event if new directory contains a madrun config file.
                          */
-
-                        if (await $fs.findUp(u.configFiles, { cwd: dir, stopAt: dir })) {
-                            const argsToEventHandler = [
-                                ...(args.pkg ? ['--pkg'] : []),
-                                ...(args.pkgName ? ['--pkgName', String(args.pkgName)] : []),
-                                ...(args.public ? ['--public'] : []),
-                            ];
-                            await $cmd.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: dir });
+                        if (await $fs.findUp(u.configFiles, { cwd: projDir, stopAt: projDir })) {
+                            const argsToEventHandler = [...(args.pkg ? ['--pkg'] : []), ...(args.pkgName ? ['--pkgName', args.pkgName] : []), ...(args.public ? ['--public'] : [])];
+                            await $cmd.spawn('npx', ['@clevercanyon/madrun', 'on::madrun:default:new', ...argsToEventHandler], { cwd: projDir });
                         }
                     },
                 })
