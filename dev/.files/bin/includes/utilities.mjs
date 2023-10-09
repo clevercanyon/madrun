@@ -1163,7 +1163,6 @@ export default class u {
 
                 for (const [dependency] of Object.entries(pkg.dependencies || {})) dependenciesToUpdate.push(dependency);
                 for (const [dependency] of Object.entries(pkg.peerDependencies || {})) dependenciesToUpdate.push(dependency);
-                for (const [dependency] of Object.entries(pkg.devDependencies || {})) dependenciesToUpdate.push(dependency);
                 if (!(await u.isPkgRepo('clevercanyon/dev-deps')))
                     for (const [dependency] of Object.entries((await u.depPkg('@clevercanyon/dev-deps'))?.dependencies || {})) {
                         if (/^@clevercanyon\//iu.test(dependency)) dependenciesToUpdate.push(dependency);
