@@ -3,11 +3,11 @@
  * Run command.
  */
 
+import * as u from '#@cli/utilities.ts';
 import { $is, $json, $obj, $str } from '@clevercanyon/utilities';
 import { $chalk, $cmd, $fs } from '@clevercanyon/utilities.node';
 import fs from 'node:fs';
 import path from 'node:path';
-import * as u from '../utilities.ts';
 
 /**
  * Types/interfaces.
@@ -281,7 +281,7 @@ export default class Run {
         let config = undefined; // Initialize.
 
         if ('default' === this.configFile) {
-            config = (await import('../../../default.js')).default as Config;
+            config = (await import('#default.js')).default as Config;
             //
         } else if (this.configFile.endsWith('.json')) {
             config = (await import(this.configFile, { assert: { type: 'json' } })) as Config;

@@ -2,15 +2,15 @@
  * Default config file.
  */
 
-import './resources/init.ts';
+import '#@init.ts';
 
+import type { Props } from '#@cli/cmds/run.ts';
+import * as u from '#@cli/utilities.ts';
 import { $brand, $fn, $is, $url } from '@clevercanyon/utilities';
 import { $cmd, $fs, $yargs } from '@clevercanyon/utilities.node';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import type { Props } from './resources/cli/cmds/run.ts';
-import * as u from './resources/cli/utilities.ts';
 
 export default {
     /**

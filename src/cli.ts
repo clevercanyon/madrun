@@ -2,11 +2,11 @@
  * CLI handler.
  */
 
-import './resources/init.ts';
+import '#@init.ts';
 
+import Run from '#@cli/cmds/run.ts';
+import * as u from '#@cli/utilities.ts';
 import { $yargs } from '@clevercanyon/utilities.node';
-import Run from './resources/cli/cmds/run.ts';
-import * as u from './resources/cli/utilities.ts';
 
 /**
  * Yargs ⛵🏴‍☠.
