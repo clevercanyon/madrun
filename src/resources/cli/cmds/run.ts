@@ -438,25 +438,27 @@ export default class Run {
             let cmdData = cmdConfigData.cmds[i];
 
             cmdData = $is.string(cmdData) ? { cmd: cmdData } : cmdData;
-            cmdData = $is.array(cmdData) // This allows a CMD to be given as a `string[]` that we’ll quote automatically.
-                ? // Passing a `string[]` is only possible when `cmd` or `cmds` are explicitly given by a CMD object config.
-                  // If you pass a `string[]` elsewhere, it will instead be interpreted as a list of CMDs and not CMD parts (see above).
-                  {
-                      cmd: cmdData
-                          .map(String)
-                          .map((cmdPart) =>
-                              // We must not quote standalone replacement code parts here. That will happen later in {@see populateCMDReplacementCodes()}.
-                              // Therefore, config files must be very careful about using replacement codes whenever an array of `string[]` CMD parts
-                              // is to be quoted. Replacement codes must exist as standalone parts in the array or they’ll be quoted twice and crash.
-                              this.allCMDArgPartsValuesStartToEndRepeatingRegExp.test(cmdPart) || //
-                              this.anyCMDArgPartsStartToEndRepeatingRegExp.test(cmdPart) ||
-                              this.anyCMDArgValuesStartToEndRepeatingRegExp.test(cmdPart)
-                                  ? cmdPart // Defer quoting in this case.
-                                  : $cmd.quote(cmdPart),
-                          )
-                          .join(' '),
-                  }
-                : cmdData;
+            cmdData = // This allows a CMD to be given as a `string[]` that we’ll quote automatically.
+                // Passing a `string[]` is only possible when `cmd` or `cmds` are explicitly given by a CMD object config.
+                // If you pass a `string[]` elsewhere, it will instead be interpreted as a list of CMDs and not CMD parts (see above).
+                $is.array(cmdData) || ($is.plainObject(cmdData) && $is.array(cmdData.cmd))
+                    ? {
+                          ...($is.plainObject(cmdData) ? cmdData : {}),
+                          cmd: (($is.plainObject(cmdData) ? cmdData.cmd : cmdData) as unknown[])
+                              .map(String)
+                              .map((cmdPart) =>
+                                  // We must not quote standalone replacement code parts here. That will happen later in {@see populateCMDReplacementCodes()}.
+                                  // Therefore, config files must be very careful about using replacement codes whenever an array of `string[]` CMD parts
+                                  // is to be quoted. Replacement codes must exist as standalone parts in the array or they’ll be quoted twice and crash.
+                                  this.allCMDArgPartsValuesStartToEndRepeatingRegExp.test(cmdPart) || //
+                                  this.anyCMDArgPartsStartToEndRepeatingRegExp.test(cmdPart) ||
+                                  this.anyCMDArgValuesStartToEndRepeatingRegExp.test(cmdPart)
+                                      ? cmdPart // Defer quoting in this case.
+                                      : $cmd.quote(cmdPart),
+                              )
+                              .join(' '),
+                      }
+                    : cmdData;
             cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
 
             if (!$is.plainObject(cmdData)) {

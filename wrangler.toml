@@ -7,11 +7,10 @@
 # @note This entire file will be updated automatically.
 # @note Instead of editing here, please review `./wrangler.mjs`.
 #
-# Last generated using `./wrangler.mjs` Dec 3, 2023 10:50 AM UTC.
+# Last generated using `./wrangler.mjs` Dec 6, 2023 4:43 PM UTC.
 ##
 
 send_metrics = false
-usage_model = "bundled"
 compatibility_date = "2023-08-15"
 compatibility_flags = [ ]
 account_id = "f1176464a976947aa5665d989814a4b1"
@@ -419,10 +418,13 @@ pattern = "workers.hop.gdn/madrun/*"
 [env.dev]
 workers_dev = false
 
+  [env.dev.vars]
+  WRANGLER = "env=dev"
+
   [env.dev.build]
-  command = "npx @clevercanyon/madrun build --mode=dev"
+  command = "npx @clevercanyon/madrun build --mode=stage"
 
 [dev]
-ip = "0.0.0.0"
 local_protocol = "https"
+ip = "0.0.0.0"
 port = 443
