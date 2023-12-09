@@ -165,8 +165,14 @@ export default async () => {
                           'pages' === args._?.[0]
                           ? [
                                 // `$ madrun wrangler pages dev`.
-                                ...('dev' === args._?.[1] ? [{ opts: { cwd: projDir }, cmd: ['npx', 'vite', 'build', '--mode', 'stage'] }] : []),
-
+                                ...('dev' === args._?.[1] && !args.help
+                                    ? [
+                                          {
+                                              opts: { cwd: projDir },
+                                              cmd: ['npx', 'vite', 'build', '--mode', 'stage'],
+                                          },
+                                      ]
+                                    : []),
                                 // `$ madrun wrangler pages *`.
                                 [
                                     'npx',
@@ -192,6 +198,8 @@ export default async () => {
                                             ? [] // `--compatibility-flag` is an alias of `--compatibility-flags`.
                                             : wranglerSettings.compatibilityFlags.map((f) => ['--compatibility-flag', f]).flat()
                                         : []),
+                                    ...('dev' === args._?.[1] ? (args.logLevel ? [] : ['--log-level', wranglerSettings.defaultDevLogLevel]) : []),
+                                    ...('dev' === args._?.[1] ? ['--binding', wranglerSettings.miniflareDevBinding] : []), // Always on; `--binding` can be passed multiple times.
 
                                     // Default `deploy` command args.
                                     ...(['deploy', 'publish'].includes(args._?.[1]) ? (args.projectName ? [] : ['--project-name', wranglerSettings.defaultProjectName]) : []),
@@ -225,7 +233,7 @@ export default async () => {
                 env: { ...nodeEnvVars, ...cloudflareEnvVars },
                 cmds: [
                     async () => {
-                        u.log($chalk.green('Flushing Wrangler state for local dev testing.'));
+                        u.log($chalk.green('Flushing Wrangler state.'));
                         await fsp.rm(wranglerSettings.projStateDir, { recursive: true, force: true });
                     },
                 ],

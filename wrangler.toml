@@ -7,7 +7,7 @@
 # @note This entire file will be updated automatically.
 # @note Instead of editing here, please review `./wrangler.mjs`.
 #
-# Last generated using `./wrangler.mjs` Dec 6, 2023 4:43 PM UTC.
+# Last generated using `./wrangler.mjs` Dec 9, 2023 5:11 PM UTC.
 ##
 
 send_metrics = false
@@ -419,7 +419,7 @@ pattern = "workers.hop.gdn/madrun/*"
 workers_dev = false
 
   [env.dev.vars]
-  WRANGLER = "env=dev"
+  MINIFLARE = "true"
 
   [env.dev.build]
   command = "npx @clevercanyon/madrun build --mode=stage"

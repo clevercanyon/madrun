@@ -124,6 +124,8 @@ export default {
 
                         let fromRepo = args.from || args.template || '{{parentDirBasename}}/skeleton';
                         fromRepo = fromRepo.replace(/\{{2}\s*parentDirBasename\s*\}{2}/giu, $url.encode(_parentDirOwner));
+
+                        if (fromRepo.includes('@')) fromRepo = fromRepo.replace(/^@/u, '');
                         if (!fromRepo.includes('/')) fromRepo = $url.encode(_parentDirOwner) + '/' + fromRepo;
                         if (!fromRepo.includes('//')) fromRepo = 'https://github.com/' + fromRepo;
                         if (!fromRepo.endsWith('.git')) fromRepo += '.git';
