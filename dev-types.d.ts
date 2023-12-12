@@ -28,9 +28,16 @@ declare var __PREFRESH__: object;
 /**
  * Declares virtual brand config file.
  */
-declare module 'virtual:brand-config' {
+declare module 'virtual:brand/config' {
     import { $type } from '@clevercanyon/utilities';
     export default {} as Partial<$type.BrandRawProps>;
+}
+
+/**
+ * Defines missing `entries()` on FormData.
+ */
+interface FormData {
+    entries(): IterableIterator<[key: string, value: string | Blob]>;
 }
 
 /*

@@ -169,7 +169,8 @@ export default async () => {
                                     ? [
                                           {
                                               opts: { cwd: projDir },
-                                              cmd: ['npx', 'vite', 'build', '--mode', 'stage'],
+                                              env: { VITE_WRANGLER_MODE: 'dev', ...nodeEnvVars, ...cloudflareEnvVars },
+                                              cmd: ['npx', 'vite', 'build', '--mode', 'dev'],
                                           },
                                       ]
                                     : []),

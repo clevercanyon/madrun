@@ -21,6 +21,7 @@ import importAliases from '../bin/includes/import-aliases.mjs';
 import u from '../bin/includes/utilities.mjs';
 import viteA16sDir from './includes/a16s/dir.mjs';
 import viteC10nBrandConfig from './includes/c10n/brand-config.mjs';
+import viteC10nNoModulePreloadConfig from './includes/c10n/no-module-preload.mjs';
 import viteC10nPostProcessingConfig from './includes/c10n/post-processing.mjs';
 import viteC10nSideEffectsConfig from './includes/c10n/side-effects.mjs';
 import viteDTSConfig from './includes/dts/config.mjs';
@@ -33,6 +34,7 @@ import viteMinifyConfig from './includes/minify/config.mjs';
 import vitePkgUpdates from './includes/package/updates.mjs';
 import vitePrefreshConfig from './includes/prefresh/config.mjs';
 import viteRollupConfig from './includes/rollup/config.mjs';
+import viteTerserConfig from './includes/terser/config.mjs';
 import viteVitestConfig from './includes/vitest/config.mjs';
 
 /**
@@ -145,8 +147,10 @@ export default async ({ mode, command, isSsrBuild: isSSRBuild }) => {
      */
     const peerDepKeys = Object.keys(pkg.peerDependencies || {});
     const targetEnvIsServer = ['cfw', 'node'].includes(targetEnv);
-    const minifyEnable = !['lib'].includes(appType) && !['dev'].includes(mode);
-    const sourcemapsEnable = ['dev', 'stage'].includes(mode); // Sourcemaps only in these modes.
+    const wranglerMode = process.env.VITE_WRANGLER_MODE || ''; // Wrangler mode.
+    const inProdLikeMode = ['prod', 'stage'].includes(mode) || ('dev' === mode && 'dev' === wranglerMode);
+    const sourcemapsEnable = ['dev'].includes(mode); // Only generate sourcemaps when explicitly in dev mode.
+    const minifyEnable = !['lib'].includes(appType) && inProdLikeMode; // We don’t ever minify code in a library.
     const vitestSandboxEnable = process.env.VITEST && $str.parseValue(String(process.env.VITEST_SANDBOX_ENABLE || ''));
     const vitestExamplesEnable = process.env.VITEST && $str.parseValue(String(process.env.VITEST_EXAMPLES_ENABLE || ''));
     const prefreshEnable = process.env.VITE_PREFRESH_ENABLE && !process.env.VITEST && 'serve' === command && 'dev' === mode && ['spa', 'mpa'].includes(appType);
@@ -196,12 +200,13 @@ export default async ({ mode, command, isSsrBuild: isSSRBuild }) => {
         await viteIconsConfig({}),
         await viteC10nBrandConfig({}),
         await viteC10nSideEffectsConfig({}),
+        await viteC10nNoModulePreloadConfig({}),
         await viteMDXConfig({ projDir }),
         await viteEJSConfig({ mode, projDir, srcDir, pkg, env }),
         await viteMinifyConfig({ minifyEnable }),
         await viteDTSConfig({ distDir }),
         await viteC10nPostProcessingConfig({
-            mode, command, isSSRBuild, projDir, distDir,
+            mode, wranglerMode, inProdLikeMode, command, isSSRBuild, projDir, distDir,
             pkg, env, appBaseURL, appType, targetEnv, staticDefs, pkgUpdates
         }), // prettier-ignore
         ...(prefreshEnable ? [await vitePrefreshConfig({})] : []),
@@ -211,6 +216,11 @@ export default async ({ mode, command, isSsrBuild: isSSRBuild }) => {
      * Configures esbuild for Vite.
      */
     const esbuildConfig = await viteESBuildConfig({}); // Minimal config. No props at this time.
+
+    /**
+     * Configures terser for Vite.
+     */
+    const terserConfig = await viteTerserConfig({}); // Minimal config. No props passed at this time.
 
     /**
      * Configures rollup for Vite.
@@ -311,12 +321,14 @@ export default async ({ mode, command, isSsrBuild: isSSRBuild }) => {
             ssrManifest: isSSRBuild ? 'vite/ssr-manifest.json' : false, // Enables SSR manifest of asset locations.
             sourcemap: sourcemapsEnable, // Enables creation of sourcemaps; i.e., purely for debugging purposes.
 
-            minify: minifyEnable ? 'esbuild' : false, // {@see https://o5p.me/pkJ5Xz}.
+            terserOptions: terserConfig, // Terser config options.
+            minify: minifyEnable ? 'terser' : false, // {@see https://o5p.me/pkJ5Xz}.
             cssMinify: minifyEnable ? 'lightningcss' : false, // {@see https://o5p.me/h0Hgj3}.
             // We ran several tests between `esbuild`, `cssnano`, and `lightningcss` wins.
 
             modulePreload: false, // Disable. DOM injections conflict with our SPAs.
             // This option is sort-of respected, but not fully; {@see https://github.com/vitejs/vite/issues/13952}.
+            // For now, we have a custom plugin, configured above, which effectively disables all preloading.
 
             ...(['cma', 'lib'].includes(appType) ? { lib: { entry: appEntries, formats: ['es'] } } : {}),
             rollupOptions: rollupConfig, // See: <https://o5p.me/5Vupql>.

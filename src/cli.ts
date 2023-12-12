@@ -2,7 +2,7 @@
  * CLI handler.
  */
 
-import '#@init.ts';
+import '#@initialize.ts';
 
 import Run from '#@cli/cmds/run.ts';
 import * as u from '#@cli/utilities.ts';

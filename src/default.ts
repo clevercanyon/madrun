@@ -2,7 +2,7 @@
  * Default config file.
  */
 
-import '#@init.ts';
+import '#@initialize.ts';
 
 import type { Props } from '#@cli/cmds/run.ts';
 import * as u from '#@cli/utilities.ts';

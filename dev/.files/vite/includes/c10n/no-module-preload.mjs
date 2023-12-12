@@ -1,5 +1,5 @@
 /**
- * C10n brand plugin.
+ * C10n no module preload plugin.
  *
  * Vite is not aware of this config file's location.
  *
@@ -8,31 +8,24 @@
  * @note Instead of editing here, please review <https://github.com/clevercanyon/skeleton>.
  */
 
-import { $json } from '../../../../../node_modules/@clevercanyon/utilities/dist/index.js';
-import u from '../../../bin/includes/utilities.mjs';
-
 /**
- * Configures Vite brand plugin.
+ * Configures Vite no module preload plugin.
  *
  * @param   props Props from vite config file driver.
  *
  * @returns       Plugin configuration.
  */
 export default async (/* {} */) => {
-    const virtualId = 'virtual:brand/config';
+    const virtualId = 'vite/preload-helper.js';
     const resolvedVirtualId = '\0' + virtualId;
 
     return {
-        name: 'vite-plugin-c10n-brand-config',
+        name: 'vite-plugin-c10n-no-module-preload',
+        enforce: 'pre', // Before Vite loads this virtual module.
 
-        resolveId(id) {
-            if (id === virtualId) {
-                return '\0' + id;
-            }
-        },
-        async load(id) {
+        load(id) {
             if (id === resolvedVirtualId) {
-                return 'export default ' + $json.stringify(await u.brandConfig(), { pretty: true });
+                return 'export const __vitePreload = (dynamicImport) => dynamicImport();';
             }
         },
     };
