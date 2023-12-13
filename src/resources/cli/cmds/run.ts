@@ -187,7 +187,7 @@ export default class Run {
             ...$obj.omit(args, u.omitFromNamedArgs),
         };
         if ('' === this.cmd) {
-            throw new Error('Missing command name.');
+            throw Error('Missing command name.');
         }
         const foundConfigFile = $fs.findUpSync(u.configFiles);
 
@@ -293,10 +293,10 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === config /* Cannot be null otherwise. */) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         if (!$is.plainObject(config) && !$is.function(config)) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         return config;
     }
@@ -313,7 +313,7 @@ export default class Run {
             return undefined; // Event w/o a listener.
         }
         if (undefined === config /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         if ($is.plainObject(config)) {
             const configObj = config; // Object pointer.
@@ -323,10 +323,10 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === config /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         if (!$is.function(config)) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         return config; // As function.
     }
@@ -343,7 +343,7 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === configFn /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + path.basename(this.configFile) + '` config failure.');
+            throw Error('`' + path.basename(this.configFile) + '` config failure.');
         }
         const cmdConfigs = await configFn({ cmd: this.cmd, args: this.args, ctx: this.ctx });
         const cmdConfig = cmdConfigs[this.cmd] || undefined; // By CMD name.
@@ -352,7 +352,7 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + this.cmd + '` command is unavailable.');
+            throw Error('`' + this.cmd + '` command is unavailable.');
         }
         return cmdConfig;
     }
@@ -369,7 +369,7 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + this.cmd + '` command is unavailable.');
+            throw Error('`' + this.cmd + '` command is unavailable.');
         }
         if ($is.string(cmdConfig)) {
             const cmdConfigStr = cmdConfig; // String pointer.
@@ -387,10 +387,10 @@ export default class Run {
             return undefined; // Event w/o a listener.
             //
         } else if (undefined === cmdConfig /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + this.cmd + '` command is unavailable.');
+            throw Error('`' + this.cmd + '` command is unavailable.');
         }
         if (!$is.function(cmdConfig)) {
-            throw new Error('`' + this.cmd + '` command has an invalid data type.');
+            throw Error('`' + this.cmd + '` command has an invalid data type.');
         }
         return cmdConfig; // As function.
     }
@@ -407,7 +407,7 @@ export default class Run {
             return { env: {}, opts: {}, cmds: [] }; // Event w/o a listener.
             //
         } else if (undefined === cmdConfigFn /* Cannot be undefined otherwise. */) {
-            throw new Error('`' + this.cmd + '` command is unavailable.');
+            throw Error('`' + this.cmd + '` command is unavailable.');
         }
         let cmdConfigData = await cmdConfigFn({ cmd: this.cmd, args: this.args, ctx: this.ctx });
 
@@ -416,7 +416,7 @@ export default class Run {
         cmdConfigData = $is.function(cmdConfigData) ? { cmds: [cmdConfigData] } : cmdConfigData;
 
         if (!$is.plainObject(cmdConfigData)) {
-            throw new Error('`' + this.cmd + '` command config has an invalid data type.');
+            throw Error('`' + this.cmd + '` command config has an invalid data type.');
         }
         cmdConfigData = $obj.assign({ env: {}, opts: {}, cmds: [] }, cmdConfigData) as unknown as CMDConfigObject;
         (cmdConfigData.env = cmdConfigData.env || {}), (cmdConfigData.opts = cmdConfigData.opts || {});
@@ -426,13 +426,13 @@ export default class Run {
         cmdConfigData.cmds = $is.plainObject(cmdConfigData.cmds) ? [cmdConfigData.cmds] : cmdConfigData.cmds;
 
         if (!$is.plainObject(cmdConfigData.env)) {
-            throw new Error('`' + this.cmd + '` command config contains invalid data for derived `env` property.');
+            throw Error('`' + this.cmd + '` command config contains invalid data for derived `env` property.');
         }
         if (!$is.plainObject(cmdConfigData.opts)) {
-            throw new Error('`' + this.cmd + '` command config contains invalid data for derived `opts` property.');
+            throw Error('`' + this.cmd + '` command config contains invalid data for derived `opts` property.');
         }
         if (!$is.array(cmdConfigData.cmds) || !cmdConfigData.cmds.length) {
-            throw new Error('`' + this.cmd + '` command config contains invalid data for derived `cmds` property.');
+            throw Error('`' + this.cmd + '` command config contains invalid data for derived `cmds` property.');
         }
         for (let i = 0; i < cmdConfigData.cmds.length; i++) {
             let cmdData = cmdConfigData.cmds[i];
@@ -462,19 +462,19 @@ export default class Run {
             cmdData = $is.function(cmdData) ? { cmd: cmdData } : cmdData;
 
             if (!$is.plainObject(cmdData)) {
-                throw new Error('`' + this.cmd + '` command config contains a CMD with an invalid data type.');
+                throw Error('`' + this.cmd + '` command config contains a CMD with an invalid data type.');
             }
             cmdData = $obj.assign({ env: { ...cmdConfigData.env }, opts: { ...cmdConfigData.opts }, cmd: '' }, cmdData) as unknown as CMDSingleConfigObject;
             (cmdData.env = cmdData.env || {}), (cmdData.opts = cmdData.opts || {});
 
             if (!$is.plainObject(cmdData.env)) {
-                throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `env` property.');
+                throw Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `env` property.');
             }
             if (!$is.plainObject(cmdData.opts)) {
-                throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `opts` property.');
+                throw Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `opts` property.');
             }
             if (!cmdData.cmd || (!$is.string(cmdData.cmd) && !$is.function(cmdData.cmd))) {
-                throw new Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `cmd` property.');
+                throw Error('`' + this.cmd + '` command config contains a CMD with invalid data for its derived `cmd` property.');
             }
             cmdConfigData.cmds[i] = cmdData; // Update.
         }

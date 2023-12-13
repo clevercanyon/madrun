@@ -108,7 +108,7 @@ export default {
                          * Validates `projDir`.
                          */
                         if (!args.projDir) {
-                            throw new Error('Missing new directory location.');
+                            throw Error('Missing new directory location.');
                         }
 
                         /**
@@ -136,10 +136,10 @@ export default {
                          * Further validates `projDir` argument.
                          */
                         if (fs.existsSync(projDir)) {
-                            throw new Error('Directory already exists: `' + projDir + '`.');
+                            throw Error('Directory already exists: `' + projDir + '`.');
                         }
                         if (!fs.existsSync(path.dirname(projDir))) {
-                            throw new Error('Nonexistent parent directory: `' + path.dirname(projDir) + '`.');
+                            throw Error('Nonexistent parent directory: `' + path.dirname(projDir) + '`.');
                         }
 
                         /**
