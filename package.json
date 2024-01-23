@@ -3,7 +3,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "1.0.160",
+    "version": "1.0.161",
     "license": "GPL-3.0-or-later",
     "name": "@clevercanyon/madrun",
     "description": "Runs commands, shell scripts, or JS functions configured by a `{madrun.config,.madrun}.{mjs,cjs,js,json}` file.",
@@ -55,15 +55,15 @@
         }
     },
     "dependencies": {
-        "@clevercanyon/utilities": "^1.0.745",
-        "@clevercanyon/utilities.node": "^1.0.168"
+        "@clevercanyon/utilities": "^1.0.746",
+        "@clevercanyon/utilities.node": "^1.0.169"
     },
     "peerDependencies": {},
     "peerDependenciesMeta": {},
     "optionalDependencies": {},
     "bundleDependencies": [],
     "devDependencies": {
-        "@clevercanyon/dev-deps": "^1.0.335"
+        "@clevercanyon/dev-deps": "^1.0.336"
     },
     "overrides": {},
     "cpu": ["x64", "arm64"],
