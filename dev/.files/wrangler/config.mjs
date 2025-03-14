@@ -22,8 +22,7 @@
 
 import path from 'node:path';
 import { $fs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
-import { $obp, $time } from '../../../node_modules/@clevercanyon/utilities/dist/index.js';
-import extensions from '../bin/includes/extensions.mjs';
+import { $obj, $obp } from '../../../node_modules/@clevercanyon/utilities/dist/index.js';
 import u from '../bin/includes/utilities.mjs';
 import wranglerSettings from './settings.mjs';
 
@@ -45,167 +44,148 @@ export default async () => {
 
     /**
      * Defines base config.
-     *
-     * A few settings, like `send_metrics`, `compatibility_date`, `compatibility_flags`, are potentially relevant to any
-     * app, because they also configure miniflare through Vitest for testing. So they are always defined, regardless.
      */
     const baseConfig = {
-        // Platform settings.
-
-        send_metrics: false,
-
         // Compatibility settings.
 
         compatibility_date: settings.compatibilityDate,
         compatibility_flags: settings.compatibilityFlags,
 
-        // The rest of these settings are applied conditionally.
+        // Metric settings.
 
-        ...(['cma', 'spa', 'mpa'].includes(appType) && ['cfw', 'cfp'].includes(targetEnv)
+        send_metrics: settings.defaultSendMetricsEnable,
+
+        // Upper limit on CPU time.
+
+        limits: { cpu_ms: settings.defaultCPULimitTime },
+
+        // Smart placement settings.
+
+        placement: { mode: settings.defaultPlacementMode },
+
+        // Local development settings.
+        dev: {
+            ip: settings.defaultLocalIP,
+            host: settings.defaultLocalHostname,
+            port: Number(settings.defaultLocalPort),
+            local_protocol: settings.defaultLocalProtocol,
+            upstream_protocol: settings.defaultUpstreamProtocol,
+        },
+    };
+
+    /**
+     * Defines worker project config.
+     */
+    const workerProjectConfig = {
+        ...(['cma'].includes(appType) && ['cfw'].includes(targetEnv)
             ? {
-                  ...(['spa', 'mpa'].includes(appType)
-                      ? // Cloudflare pages site.
-                        {
-                            // CF UI is source of truth.
-                        }
-                      : // Cloudflare worker configuration.
-                        {
-                            // Worker account ID.
-                            account_id: settings.defaultAccountId,
+                  // Worker account ID.
 
-                            // Enables logpush for worker trace events.
-                            logpush: settings.defaultLogpush, // Requires paid plan.
+                  account_id: settings.defaultAccountId,
 
-                            // Sets a default upper limit on CPU time.
-                            limits: { cpu_ms: $time.secondInMilliseconds * 5 },
+                  // Worker name.
 
-                            // Worker name.
-                            name: settings.defaultWorkerName,
+                  name: settings.defaultWorkerName,
 
-                            // App main entry configuration.
-                            main: './' + path.relative(projDir, './dist/index.js'),
+                  // Worker main entry file path and rules.
 
-                            // Bundling configuration; {@see <https://o5p.me/JRHxfC>}.
-                            rules: [
-                                {
-                                    type: 'ESModule',
-                                    globs: extensions.asNoBraceGlobstars([
-                                        ...extensions.byDevGroup.sJavaScript, //
-                                        ...extensions.byDevGroup.sJavaScriptReact,
+                  main: './' + path.relative(projDir, settings.defaultWorkerMainEntryFile),
+                  rules: settings.defaultWorkerRules,
 
-                                        ...extensions.byDevGroup.mJavaScript,
-                                        ...extensions.byDevGroup.mJavaScriptReact,
-                                    ]),
-                                    fallthrough: false,
-                                },
-                                {
-                                    type: 'CommonJS',
-                                    globs: extensions.asNoBraceGlobstars([
-                                        ...extensions.byDevGroup.cJavaScript, //
-                                        ...extensions.byDevGroup.cJavaScriptReact,
-                                    ]),
-                                    fallthrough: false,
-                                },
-                                {
-                                    type: 'Text',
-                                    globs: extensions.asNoBraceGlobstars(
-                                        [...extensions.byVSCodeLang.codeTextual].filter(
-                                            (ext) =>
-                                                ![
-                                                    ...extensions.byDevGroup.sJavaScript, //
-                                                    ...extensions.byDevGroup.sJavaScriptReact,
+                  // Worker subdomains; i.e., `*.workers.dev`.
 
-                                                    ...extensions.byDevGroup.mJavaScript,
-                                                    ...extensions.byDevGroup.mJavaScriptReact,
+                  workers_dev: settings.defaultWorkersDevEnable,
+                  preview_urls: settings.defaultWorkersDevPreviewURLsEnable,
 
-                                                    ...extensions.byDevGroup.cJavaScript,
-                                                    ...extensions.byDevGroup.cJavaScriptReact,
+                  // Worker observability for internal logging.
 
-                                                    ...extensions.byCanonical.wasm,
-                                                    ...extensions.byDevGroup.allTypeScript,
-                                                    // Omit TypeScript also, because it causes Wrangler to choke. Apparently, Wrangler’s build system incorporates TypeScript middleware files.
-                                                    // Therefore, we omit all TypeScript such that Wrangler’s build system can add TS files without them inadvertently being classified as text by our rules.
-                                                    // We don’t expect TypeScript to be present in our `./dist` anyway, so this is harmless, and probably a good idea in general to omit TypeScript here.
-                                                ].includes(ext),
-                                        ),
-                                    ),
-                                    fallthrough: false,
-                                },
-                                {
-                                    type: 'Data',
-                                    globs: extensions.asNoBraceGlobstars(
-                                        [...extensions.byVSCodeLang.codeTextBinary].filter(
-                                            (ext) =>
-                                                ![
-                                                    ...extensions.byDevGroup.sJavaScript, //
-                                                    ...extensions.byDevGroup.sJavaScriptReact,
+                  observability: {
+                      enabled: settings.defaultWorkerObservabilityEnabled,
+                      head_sampling_rate: settings.defaultWorkerObservabilityHeadSamplingRate,
+                  },
+                  // Worker logpush for external logging.
 
-                                                    ...extensions.byDevGroup.mJavaScript,
-                                                    ...extensions.byDevGroup.mJavaScriptReact,
+                  logpush: settings.defaultWorkerLogpush, // Requires paid plan.
 
-                                                    ...extensions.byDevGroup.cJavaScript,
-                                                    ...extensions.byDevGroup.cJavaScriptReact,
+                  // Worker default route.
+                  route: {
+                      zone_name: settings.defaultWorkerZoneName,
+                      pattern: settings.defaultWorkersDomain + '/' + settings.defaultWorkerShortName + '/*',
+                  },
+                  // Worker environments.
+                  env: {
+                      // `$ madrun tests`, `$ madrun wrangler dev` environment for local testing.
+                      dev: {
+                          route: {
+                              zone_name: settings.defaultLocalHostname,
+                              pattern: settings.defaultLocalHostname + '/' + settings.defaultWorkerShortName + '/*',
+                          },
+                      },
+                      // `$ madrun wrangler deploy --env=stage` environment.
+                      stage: {
+                          route: {
+                              zone_name: settings.defaultWorkerZoneName,
+                              pattern: settings.defaultWorkersDomain + '/' + settings.defaultWorkerStageShortName + '/*',
+                          },
+                      },
+                  },
+              }
+            : {}),
+    };
 
-                                                    ...extensions.byCanonical.wasm,
-                                                    ...extensions.byDevGroup.allTypeScript,
-                                                ].includes(ext),
-                                        ),
-                                    ),
-                                    fallthrough: false,
-                                },
-                                { type: 'CompiledWasm', globs: extensions.asNoBraceGlobstars([...extensions.byCanonical.wasm]), fallthrough: false },
-                            ],
+    /**
+     * Defines pages project config.
+     */
+    const pagesProjectConfig = {
+        ...(['spa', 'mpa'].includes(appType) && ['cfp'].includes(targetEnv)
+            ? {
+                  // Pages project account ID.
+                  //   Not supported by `$ madrun wrangler pages deploy`.
+                  //   Instead, `account_id` is filled and cached by a CLI prompt.
+                  // account_id: settings.defaultAccountId
 
-                            // Custom build configuration.
-                            build: {
-                                cwd: './' + path.relative(projDir, './'),
-                                watch_dir: './' + path.relative(projDir, './src'),
-                                command: 'npx @clevercanyon/madrun build --mode=prod',
-                            },
+                  // Pages project name.
 
-                            // Route configuration.
-                            route: {
-                                zone_name: settings.defaultWorkerZoneName,
-                                pattern: settings.defaultWorkersDomain + '/' + settings.defaultWorkerShortName + '/*',
-                            },
+                  name: settings.defaultPagesProjectName,
 
-                            // `$ madrun wrangler dev` settings.
-                            dev: {
-                                local_protocol: settings.defaultLocalProtocol,
-                                ip: settings.defaultLocalIP, // e.g., `0.0.0.0`.
-                                port: Number(settings.defaultLocalPort),
-                            },
+                  // Pages project build output directory.
 
-                            // Environments used by this worker.
-                            workers_dev: false, // We don’t use `*workers.dev`.
-                            env: {
-                                // `$ madrun wrangler dev` environment, for local testing.
-                                dev: {
-                                    route: {
-                                        zone_name: settings.defaultLocalHostname,
-                                        pattern: settings.defaultLocalHostname + '/' + settings.defaultWorkerShortName + '/*',
-                                    },
-                                    vars: settings.miniflareEnvVarAsObject,
-                                    build: {
-                                        cwd: './' + path.relative(projDir, './'),
-                                        watch_dir: './' + path.relative(projDir, './src'),
-                                        command: 'VITE_WRANGLER_MODE=dev npx @clevercanyon/madrun build --mode=dev',
-                                    },
-                                },
-                                // `$ madrun wrangler deploy --env=stage`.
-                                stage: {
-                                    route: {
-                                        zone_name: settings.defaultWorkerZoneName,
-                                        pattern: settings.defaultWorkersDomain + '/' + settings.defaultWorkerStageShortName + '/*',
-                                    },
-                                    build: {
-                                        cwd: './' + path.relative(projDir, './'),
-                                        watch_dir: './' + path.relative(projDir, './src'),
-                                        command: 'npx @clevercanyon/madrun build --mode=stage',
-                                    },
-                                },
-                            },
-                        }),
+                  pages_build_output_dir: './' + path.relative(projDir, settings.defaultPagesBuildOutputDir),
+
+                  // Pages project should include source maps?
+
+                  upload_source_maps: settings.defaultPagesUploadSourceMaps,
+
+                  // Pages project environments.
+                  //   We don't typically use separate environments for pages projects.
+                  //   However, if the need arises (e.g., a desire to deploy a stage branch),
+                  //   the following template and details will be very helpful when setting things up.
+                  /* env: {
+                      // `$ madrun tests`, `$ madrun wrangler pages dev` environment for local testing.
+                      //   For pages projects, an explicit `dev` environment is not supported by `$ madrun wrangler pages deploy`.
+                      //   The only valid environment keys are `production` and `preview`. So instead of `dev`, top-level keys are `dev` keys.
+                      //   Remember, miniflare writes to local storage anyway, so having a separate `dev` environment is not 100% necessary.
+                      //   What is necessary is that miniflare knows the names of the bindings we need, so it can populate those for tests.
+
+                      // `$ madrun wrangler pages deploy` to production environment.
+                      // production: {}, // If undefined, top-level keys are used for production.
+
+                      // `$ madrun wrangler pages deploy --branch=[!=production]` environment.
+                      // preview: {}, // If undefined, top-level keys are used for non-production branches.
+                  }, */
+              }
+            : {}),
+    };
+
+    /**
+     * Defines non-pages project test config.
+     */
+    const nonPagesProjectTestConfig = {
+        ...(!(['spa', 'mpa'].includes(appType) && ['cfp'].includes(targetEnv))
+            ? {
+                  // For non-pages projects, an `{ env: { dev: {} } }` key must exist for vitest `poolOptions.workers.wrangler.environment`.
+                  // An empty object is OK, so long as the key exists; i.e., so miniflare can find the environment we test with, which is `dev`.
+                  env: { dev: {} }, // Nothing else to merge at this time.
               }
             : {}),
     };
@@ -213,7 +193,5 @@ export default async () => {
     /**
      * Composition.
      */
-    return {
-        ...baseConfig,
-    };
+    return $obj.mergeDeep(baseConfig, workerProjectConfig, pagesProjectConfig, nonPagesProjectTestConfig);
 };

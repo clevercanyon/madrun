@@ -13,7 +13,9 @@
  */
 
 import path from 'node:path';
+import { sql as sqlDialect } from 'sql-formatter';
 import { $fs } from '../../../node_modules/@clevercanyon/utilities.node/dist/index.js';
+import { $json } from '../../../node_modules/@clevercanyon/utilities/dist/index.js';
 import extensions from '../bin/includes/extensions.mjs';
 import tailwindSettings from '../tailwind/settings.mjs';
 
@@ -36,6 +38,7 @@ export default async () => {
             'prettier-plugin-sh',
             'prettier-plugin-ini',
             'prettier-plugin-sql',
+            'prettier-plugin-toml',
             '@prettier/plugin-xml',
             '@prettier/plugin-php',
             '@prettier/plugin-ruby',
@@ -73,7 +76,9 @@ export default async () => {
         trailingComma: 'all', // {@see https://prettier.io/docs/en/options#trailing-commas}
         bracketSpacing: true, // {@see https://prettier.io/docs/en/options#bracket-spacing}
         arrowParens: 'always', // {@see https://prettier.io/docs/en/options#arrow-function-parentheses}.
+        objectWrap: 'preserve', // {@see https://prettier.io/docs/options#object-wrap}.
         experimentalTernaries: false, // {@see https://prettier.io/docs/en/options#experimental-ternaries}.
+        experimentalOperatorPosition: 'end', // {@see https://prettier.io/docs/options#experimental-operator-position}.
 
         // Markdown, HTML, JSX related options.
         proseWrap: 'preserve', // {@see https://prettier.io/docs/en/options#prose-wrap}
@@ -138,8 +143,9 @@ export default async () => {
                 files: ['*.' + extensions.asBracedGlob([...extensions.byVSCodeLang.php])],
                 options: {
                     parser: 'php',
-                    phpVersion: '8.1',
                     braceStyle: '1tbs',
+                    phpVersion: '8.1',
+                    singleQuote: true,
                     trailingCommaPHP: true,
                 },
             },
@@ -256,6 +262,7 @@ export default async () => {
                     jsdocSeparateTagGroups: true,
                     jsdocSpaces: 1,
                     jsdocVerticalAlignment: true,
+                    jsdocTagsOrder: undefined,
                     tsdoc: false,
                 },
             },
@@ -278,9 +285,18 @@ export default async () => {
                  */
                 files: ['*.' + extensions.asBracedGlob([...extensions.tailwindPrettierContent])],
                 options: {
+                    tailwindPreserveDuplicates: false,
+                    tailwindPreserveWhitespace: false,
                     tailwindFunctions: tailwindSettings.classFunctions,
                     tailwindAttributes: tailwindSettings.classAttributes,
+
                     tailwindConfig: path.resolve(projDir, './tailwind.config.mjs'),
+                    // As of 2025-03-13, Tailwind v4 is indeed supported by this plugin.
+                    // Therefore, we could also set a v4 CSS entry, in addition to a v3 config.
+
+                    // ...(fs.existsSync(path.resolve(srcDir, './index.css')) //
+                    //   ? { tailwindStylesheet: path.resolve(srcDir, './index.css') }
+                    //    : {}), // It would be nice if this supported globs.
                 },
             },
             {
@@ -324,20 +340,22 @@ export default async () => {
                 files: ['*.' + extensions.asBracedGlob([...extensions.byVSCodeLang.sql])],
                 options: {
                     parser: 'sql',
-                    commaPosition: 'after',
                     database: 'mysql',
+                    dataTypeCase: 'upper',
                     denseOperators: false,
+                    dialect: $json.stringify(sqlDialect),
                     expressionWidth: baseConfig.printWidth,
                     formatter: 'sql-formatter',
+                    functionCase: 'upper',
+                    identifierCase: 'preserve',
                     indentStyle: 'standard',
                     keywordCase: 'upper',
                     language: 'sql',
                     linesBetweenQueries: 1,
                     logicalOperatorNewline: 'before',
                     newlineBeforeSemicolon: false,
-                    params: Object,
-                    paramTypes: Object,
-                    tabulateAlias: false,
+                    params: $json.stringify({}),
+                    paramTypes: $json.stringify({}),
                     type: 'table',
                 },
             },
@@ -366,7 +384,7 @@ export default async () => {
                  * @see https://o5p.me/GI5Eiw
                  */
                 files: ['*.' + extensions.asBracedGlob([...extensions.byVSCodeLang.toml])],
-                options: { parser: '' }, // Not ready for production yet, but coming soon.
+                options: { parser: 'toml' },
             },
             {
                 /**

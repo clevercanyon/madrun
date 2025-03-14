@@ -248,7 +248,10 @@ export default async () => {
                     tailwindcss: {
                         callees: tailwindSettings.classFunctions,
                         classRegex: tailwindSettings.classAttributesRegExpStr,
+
                         config: path.resolve(projDir, './tailwind.config.mjs'),
+                        // As of 2025-03-13, Tailwind v4 is not supported by this plugin.
+                        // Therefore, there is no v4 CSS entry given here. Only a v3 config.
 
                         cssFiles: ['!**/*'], // Choosing not to use CSS file scans, for now.
                         // As of 2023-09-29, this only impacts the `no-custom-classname` rule, which we don’t use.
@@ -284,7 +287,7 @@ export default async () => {
                         requireConfigFile: true,
                         ecmaFeatures: { globalReturn: false },
                         tsconfigRootDir: path.resolve(projDir),
-                        project: ['./tsconfig.json'],
+                        projectService: true,
                     },
                 },
             }, // Specifically for MD/MDX fenced code-blocks.
@@ -320,7 +323,7 @@ export default async () => {
                 ],
                 rules: {
                     ...pluginTypeScript.configs.recommended.rules,
-                    ...pluginTypeScript.configs['recommended-requiring-type-checking'].rules,
+                    ...pluginTypeScript.configs['recommended-type-checked'].rules,
                 },
             },
 
@@ -408,6 +411,7 @@ export default async () => {
                 ignores: [...exclusions.sandboxIgnores, ...exclusions.exampleIgnores],
                 rules: {
                     'no-empty': ['warn', { allowEmptyCatch: true }],
+                    'no-unused-expressions': ['off'],
                     'no-unused-vars': [
                         'warn',
                         {
@@ -443,7 +447,11 @@ export default async () => {
                     '@typescript-eslint/no-redeclare': ['warn'],
                     '@typescript-eslint/require-await': ['off'],
                     '@typescript-eslint/no-empty-interface': ['off'],
+                    '@typescript-eslint/no-empty-object-type': ['off'],
                     '@typescript-eslint/no-inferrable-types': ['off'],
+                    '@typescript-eslint/no-unused-expressions': ['off'],
+                    '@typescript-eslint/no-redundant-type-constituents': ['off'],
+                    '@typescript-eslint/no-base-to-string': ['off'],
                     '@typescript-eslint/ban-ts-comment': [
                         'warn',
                         {
@@ -451,16 +459,6 @@ export default async () => {
                             'ts-nocheck': 'allow-with-description',
                             'ts-expect-error': 'allow-with-description',
                             'ts-ignore': 'allow-with-description',
-                        },
-                    ],
-                    '@typescript-eslint/ban-types': [
-                        'warn',
-                        {
-                            'extendDefaults': true,
-                            // We want to use `{}` instead of `object` in some cases.
-                            // e.g., `$preact.Props<{}>` is cleaner than `$preact.Props<object>`.
-                            // {@see https://o5p.me/LDY2YY} {@see https://o5p.me/Cl4qSW}.
-                            'types': { '{}': false },
                         },
                     ],
                     '@typescript-eslint/triple-slash-reference': [
