@@ -3,7 +3,7 @@
     "publishConfig": {
         "access": "public"
     },
-    "version": "1.0.205",
+    "version": "1.0.206",
     "license": "GPL-3.0-or-later",
     "name": "@clevercanyon/madrun",
     "description": "Runs commands, shell scripts, or JS functions configured by a `{madrun.config,.madrun}.{mjs,cjs,js,json}` file.",
@@ -55,22 +55,22 @@
         }
     },
     "dependencies": {
-        "@clevercanyon/utilities": "^1.0.1030",
-        "@clevercanyon/utilities.node": "^1.0.228"
+        "@clevercanyon/utilities": "^1.0.1035",
+        "@clevercanyon/utilities.node": "^1.0.230"
     },
     "peerDependencies": {},
     "peerDependenciesMeta": {},
     "optionalDependencies": {},
     "bundleDependencies": [],
     "devDependencies": {
-        "@clevercanyon/dev-deps": "^1.0.410"
+        "@clevercanyon/dev-deps": "^1.0.411"
     },
     "overrides": {},
     "cpu": ["x64", "arm64"],
     "os": ["darwin", "linux"],
     "engines": {
-        "node": "^20.5.0 || ^20.9.0 || ^21.6.2",
-        "npm": "^9.8.0 || ^10.1.0 || ^10.2.4"
+        "node": "^20.9.0 || ^21.6.2 || ^22.9.0",
+        "npm": "^10.1.0 || ^10.2.4 || ^10.8.3"
     },
     "config": {
         "c10n": {
@@ -96,11 +96,11 @@
                         "architects": "push"
                     },
                     "labels": {},
-                    "configVersion": "1.0.9",
+                    "configVersion": "1.0.10",
                     "envsVersion": ""
                 },
                 "npmjs": {
-                    "configVersions": "1.0.9,1.0.9"
+                    "configVersions": "1.0.10,1.0.10"
                 }
             }
         }
